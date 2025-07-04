@@ -1,10 +1,13 @@
 import { defineConfig } from 'vitepress'
-import { mermaidPlugin } from 'vitepress-plugin-mermaid'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
-export default defineConfig({
-  markdown: {
-    config(md) {
-      md.use(mermaidPlugin)
+export default withMermaid(
+  defineConfig({
+    title: 'VitePress Mermaid Test',
+    description: 'Testing Mermaid integration',
+    // 如果需要，可以在这里添加mermaid配置
+    mermaid: {
+      // mermaid配置选项
     }
-  }
-})
+  })
+)
