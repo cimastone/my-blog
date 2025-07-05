@@ -39,48 +39,6 @@ sudo systemctl enable docker
 docker --version
 ```
 
-### 2. 拉取Node.js 官方镜像 && 创建并运行 VitePress 容器
-```bash
-# 拉取镜像
-docker pull node:18
-
-# 创建项目目录
-mkdir -p ~/vitepress
-cd ~/vitepress
-
-# 初始化 vitepress 项目
-docker run --rm -it -v "$PWD":/app -w /app node:18 bash
-
-# 进入容器后执行
-npm init vitepress@latest
-exit
-
-# 启动vitepress
-sudo docker run -it --name vitepress-blog \
-  -p 5173:5173 \
-  -v /root/syc/my-blog:/workspace \
-  node:18-bullseye bash
-
-# 进入容器后执行，需要在项目根目录，也就是docs同级目录
-npx vitepress dev docs --host
-
-# 对vitepress进行编译，其目的是编译后，会在 your_project_path/docs/.vitepress/dist编译成html文件
-npx vitepress build docs
-
-# 关掉docker
-docker stop vitepress-blog
-
-# 启动docker
-docker start -ai vitepress-blog
-
-#从服务器中进入docker内部
-docker exec -it vitepress-blog bash
-
-# 查询vitepress ｜ mermaid版本 
-npm ls vitepress
-npm ls mermaid
-```
-
 ### 3. 集成Giscus 评论系统
 #### 步骤 1：准备你的 GitHub 仓库
 Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的公开仓库（私有仓库不支持评论）。
