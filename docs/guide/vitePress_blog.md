@@ -84,7 +84,6 @@ npm ls mermaid
 
 #### 步骤 1：准备你的 GitHub 仓库
 Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的公开仓库（私有仓库不支持评论）。
-
 如果没有 Discussions，点击「Set up discussions」
 
 #### 步骤 2：在 Giscus 网站生成嵌入代码
