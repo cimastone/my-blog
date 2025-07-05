@@ -83,13 +83,6 @@ npm ls mermaid
 ```
 
 
-#### 步骤 2：在 Giscus 网站生成嵌入代码
-1. 打开 https://giscus.app/。
-2. 选择你的「仓库」（如 yourname/yourrepo）。
-3. 选择 Discussion 分类（如 General）。
-4. 配置 Mapping（建议用 pathname，即按页面路径分配讨论）。
-5. 配置其它选项（如主题、语言等）。
-6. 下方会自动生成一段 <script ...></script> 代码，复制备用。
    
 #### 步骤 3：在 VitePress 中插入 Giscus
 1. 新建docs/.vitepress/theme/Giscus.vue文件
