@@ -37,6 +37,8 @@ sudo systemctl enable docker
 
 # 验证 Docker 是否安装成功
 docker --version
+
+
 ```
 
 ### 3. 集成Giscus 评论系统
