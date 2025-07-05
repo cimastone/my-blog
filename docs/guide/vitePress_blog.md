@@ -19,8 +19,7 @@ so，从搭建vitepress的过程记录成一篇博客
 ### 1. 安装docker
 
 ### 2. 拉取Node.js 官方镜像 && 创建并运行 VitePress 容器
-```bash
-```
+
 
 
 ### 3. 集成Giscus 评论系统
