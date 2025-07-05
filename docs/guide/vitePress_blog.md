@@ -34,12 +34,6 @@ docker run --rm -it -v "$PWD":/app -w /app node:18 bash
 npm init vitepress@latest
 exit
 
-# 启动vitepress
-sudo docker run -it --name vitepress-blog \
-  -p 5173:5173 \
-  -v /root/syc/my-blog:/workspace \
-  node:18-bullseye bash
-
 # 进入容器后执行，需要在项目根目录，也就是docs同级目录
 npx vitepress dev docs --host
 
