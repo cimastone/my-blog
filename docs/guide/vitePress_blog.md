@@ -145,7 +145,8 @@ watch(
 ```
 
 注意点：  
-  - a页面有评论，在路由到b页面时，评论未刷新，导致评论不在对应的页面体现，所以有了watch代码，强制重新渲染评论  
+  - a页面有评论，在路由到b页面时，评论未刷新，导致评论不在对应的页面体现，所以有了watch代码，强制重新渲染评论
+  - Giscus需要登录github才能进行评论
 2. 新建docs/.vitepress/theme/Layout.vue
 ```bash
 <template>
