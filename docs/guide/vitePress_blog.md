@@ -53,7 +53,6 @@ docker run --rm -it -v "$PWD":/app -w /app node:18 bash
 
 # 进入容器后执行
 npm init vitepress@latest
-exit
 
 # 启动vitepress
 sudo docker run -it --name vitepress-blog \
