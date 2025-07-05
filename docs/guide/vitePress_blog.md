@@ -82,7 +82,6 @@ npm ls vitepress
 npm ls mermaid
 ```
 
-#### 步骤 1：准备你的 GitHub 仓库
 
 #### 步骤 2：在 Giscus 网站生成嵌入代码
 1. 打开 https://giscus.app/。
