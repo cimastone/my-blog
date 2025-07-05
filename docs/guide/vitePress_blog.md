@@ -80,6 +80,7 @@ docker exec -it vitepress-blog bash
 npm ls vitepress
 npm ls mermaid
 ```
+
 ### 3. 集成Giscus 评论系统
 #### 步骤 1：准备你的 GitHub 仓库
 Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的公开仓库（私有仓库不支持评论）。
@@ -142,6 +143,7 @@ watch(
 )
 </script>
 ```
+
 注意点：  
   - a页面有评论，在路由到b页面时，评论未刷新，导致评论不在对应的页面体现，所以有了watch代码，强制重新渲染评论  
 2. 新建docs/.vitepress/theme/Layout.vue
@@ -159,6 +161,7 @@ import DefaultTheme from 'vitepress/theme'
 import Giscus from './Giscus.vue'
 </script>
 ```
+
 注意点：  
   - 需要继承默认的布局：DefaultTheme，不然会导致sidebar和样式都不生效  
      
@@ -176,6 +179,7 @@ export default {
 ```bash
 ln -s /path/to/your/project/.vitepress/dist /var/www/my-blog
 ```
+
 2. 在nginx.conf中加入vitepress
 ```bash
   ...
@@ -186,6 +190,7 @@ ln -s /path/to/your/project/.vitepress/dist /var/www/my-blog
         }
   ...
 ```
+
 3. 在your_project_path/docs/.vitepress/conf.mjs中加入base配置，与title同级
 ```bash
  base: "/blog/",
@@ -220,6 +225,7 @@ export default {
   }
 }
 ```
+
 ***
 
 **问题2： vitepress v1.6.3内置mermaid识别不了mermaid**  
@@ -233,6 +239,7 @@ mv conf.js conf.mjs
 # 2. 安装vitepress-plugin-mermaid 插件
 npm install vitepress-plugin-mermaid mermaid
 ```
+
 your_project_path/docs/.vitepress/conf.mjs
 ```mjs
 import { defineConfig } from 'vitepress'
@@ -259,6 +266,7 @@ export default withMermaid(
   })
 )
 ```
+
 注意点
 1. 使用withMermaid，而不是mermaidPlugin
 2. 可以对mermaid配置相关的参数
