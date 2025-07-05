@@ -94,7 +94,7 @@ Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的�
 3. 选择 Discussion 分类（如 General）。
 4. 配置 Mapping（建议用 pathname，即按页面路径分配讨论）。
 5. 配置其它选项（如主题、语言等）。
-6. 下方会自动生成一段 <script></script> 代码，复制备用。
+6. 下方会自动生成一段 </pre> <script></script> 代码，复制备用。
    
 #### 步骤 3：在 VitePress 中插入 Giscus
 1. 新建docs/.vitepress/theme/Giscus.vue文件
