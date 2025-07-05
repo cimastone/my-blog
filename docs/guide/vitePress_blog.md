@@ -29,24 +29,6 @@ cd ~/vitepress
 
 # 初始化 vitepress 项目
 
-# 进入容器后执行
-npm init vitepress@latest
-exit
-
-# 进入容器后执行，需要在项目根目录，也就是docs同级目录
-npx vitepress dev docs --host
-
-npx vitepress build docs
-
-# 关掉docker
-docker stop vitepress-blog
-
-# 启动docker
-docker start -ai vitepress-blog
-
-#从服务器中进入docker内部
-docker exec -it vitepress-blog bash
-
 ```
 
 
