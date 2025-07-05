@@ -82,7 +82,6 @@ npm ls vitepress
 npm ls mermaid
 ```
 
-### 3. 集成Giscus 评论系统
 
 #### 步骤 2：在 Giscus 网站生成嵌入代码
 1. 打开 https://giscus.app/。
