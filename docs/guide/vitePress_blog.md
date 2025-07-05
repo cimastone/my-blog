@@ -58,7 +58,7 @@ docker exec -it vitepress-blog bash
 # 查询vitepress ｜ mermaid版本 
 npm ls vitepress
 npm ls mermaid
-```bash
+```
 
 
 ### 3. 集成Giscus 评论系统
