@@ -55,9 +55,6 @@ docker start -ai vitepress-blog
 #从服务器中进入docker内部
 docker exec -it vitepress-blog bash
 
-# 查询vitepress ｜ mermaid版本 
-npm ls vitepress
-npm ls mermaid
 ```
 
 
