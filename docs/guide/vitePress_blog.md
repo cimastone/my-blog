@@ -28,7 +28,6 @@ mkdir -p ~/vitepress
 cd ~/vitepress
 
 # 初始化 vitepress 项目
-docker run --rm -it -v "$PWD":/app -w /app node:18 bash
 
 # 进入容器后执行
 npm init vitepress@latest
