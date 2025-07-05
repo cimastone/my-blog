@@ -21,13 +21,6 @@ so，从搭建vitepress的过程记录成一篇博客
 ### 2. 拉取Node.js 官方镜像 && 创建并运行 VitePress 容器
 ```bash
 # 拉取镜像
-docker pull node:18
-
-# 创建项目目录
-mkdir -p ~/vitepress
-cd ~/vitepress
-
-# 初始化 vitepress 项目
 
 ```
 
