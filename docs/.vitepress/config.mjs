@@ -8,12 +8,12 @@ export default withMermaid(
     themeConfig: {
       nav: [
         { text: '首页', link: '/guide/' },
-        { text: '搭建个人博客（vitePress）', link: '/guide/搭建个人博客（vitePress）' },
+        { text: '搭建个人博客（vitePress）', link: '/guide/vitePress_blog' },
         { text: 'Redisson分布式锁+本地缓存', link: '/guide/redisson-distributed-lock' }
       ],
       sidebar: [
         { text: '首页', link: '/guide/' },
-        { text: '搭建个人博客（vitePress）', link: '/guide/搭建个人博客（vitePress）' },
+        { text: '搭建个人博客（vitePress）', link: '/guide/vitePress_blog' },
         { text: 'Redisson分布式锁+本地缓存', link: '/guide/redisson-distributed-lock' }
       ]
     }
