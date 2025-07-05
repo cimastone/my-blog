@@ -20,12 +20,6 @@ so，从搭建vitepress的过程记录成一篇博客
 
 ### 2. 拉取Node.js 官方镜像 && 创建并运行 VitePress 容器
 
-### 3. 集成Giscus 评论系统
-#### 步骤 1：准备你的 GitHub 仓库
-Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的公开仓库（私有仓库不支持评论）。
-
-打开你的 GitHub 仓库页面，点击「Settings」→「Features」→ 勾选「Discussions」。
-如果没有 Discussions，点击「Set up discussions」
 
 #### 步骤 2：在 Giscus 网站生成嵌入代码
 1. 打开 https://giscus.app/。
