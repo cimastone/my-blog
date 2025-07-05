@@ -1,4 +1,3 @@
-
 ---
 title: "搭建个人博客（vitePress）"
 date: 2025-07-05
@@ -81,6 +80,7 @@ docker exec -it vitepress-blog bash
 npm ls vitepress
 npm ls mermaid
 ```
+
 ### 3. 集成Giscus 评论系统
 #### 步骤 1：准备你的 GitHub 仓库
 Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的公开仓库（私有仓库不支持评论）。
@@ -89,10 +89,12 @@ Giscus 依赖 GitHub Discussions，你需要有一个启用了 Discussions 的�
 如果没有 Discussions，点击「Set up discussions」
 
 #### 步骤 2：在 Giscus 网站生成嵌入代码
+1. 打开 https://giscus.app/。
 2. 选择你的「仓库」（如 yourname/yourrepo）。
 3. 选择 Discussion 分类（如 General）。
 4. 配置 Mapping（建议用 pathname，即按页面路径分配讨论）。
 5. 配置其它选项（如主题、语言等）。
+6. 下方会自动生成一段 <script ...></script> 代码，复制备用。
    
 #### 步骤 3：在 VitePress 中插入 Giscus
 1. 新建docs/.vitepress/theme/Giscus.vue文件
