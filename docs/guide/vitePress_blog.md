@@ -1,7 +1,7 @@
 ---
 title: "搭建个人博客（vitePress）"
 date: 2025-07-05
-author: CimaStone
+author: cimaStone
 tags: [个人博客搭建]
 ---
 
