@@ -1,9 +1,3 @@
-# Mermaid 测试
+# 首页
 
-```mermaid
-graph TD
-  A[方形] --> B(圆角)
-  B --> C{条件}
-  C -->|a=1| D[结果1]
-  C -->|a=2| E[结果2]
-```
+搭建个人blog，记录工作多年的履历，包含技术、管理和生活的感悟；使用的vitepress服务 + github + cursor web；将各个组件形成闭环，欢迎大家共同讨论～
