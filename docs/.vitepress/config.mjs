@@ -35,26 +35,74 @@ function generateConfig() {
     ...articles.slice(0, 4).map(article => ({ text: article.text, link: article.link }))
   ]
 
-  // 生成分组侧边栏
+  // 生成分组侧边栏（支持二级分类）
   const groupedArticles = {}
+  
   articles.forEach(article => {
-    const category = article.category
-    if (!groupedArticles[category]) {
-      groupedArticles[category] = []
+    const categoryPath = article.category.split('/') // 支持 "技术架构/分布式系统" 格式
+    const mainCategory = categoryPath[0]
+    const subCategory = categoryPath[1] || null
+    
+    if (!groupedArticles[mainCategory]) {
+      groupedArticles[mainCategory] = {
+        items: [],
+        subGroups: {}
+      }
     }
-    groupedArticles[category].push({
-      text: article.text,
-      link: article.link
-    })
+    
+    if (subCategory) {
+      // 有二级分类
+      if (!groupedArticles[mainCategory].subGroups[subCategory]) {
+        groupedArticles[mainCategory].subGroups[subCategory] = []
+      }
+      groupedArticles[mainCategory].subGroups[subCategory].push({
+        text: article.text,
+        link: article.link
+      })
+    } else {
+      // 没有二级分类，直接放在主分类下
+      groupedArticles[mainCategory].items.push({
+        text: article.text,
+        link: article.link
+      })
+    }
+  })
+
+  // 构建sidebar结构
+  const sidebarGroups = Object.entries(groupedArticles).map(([mainCategory, data]) => {
+    const hasSubGroups = Object.keys(data.subGroups).length > 0
+    
+    if (hasSubGroups) {
+      // 有二级分类的情况
+      const subGroupItems = Object.entries(data.subGroups).map(([subCategory, items]) => ({
+        text: subCategory,
+        collapsed: false,
+        items: items
+      }))
+      
+      // 如果主分类下还有直接的文章，也要包含进去
+      const allItems = data.items.length > 0 
+        ? [...data.items, ...subGroupItems]
+        : subGroupItems
+      
+      return {
+        text: mainCategory,
+        collapsed: false,
+        items: allItems
+      }
+    } else {
+      // 没有二级分类的情况
+      return {
+        text: mainCategory,
+        collapsed: false,
+        items: data.items
+      }
+    }
   })
 
   const sidebar = [
     { text: '首页', link: '/guide/' },
-    ...Object.entries(groupedArticles).map(([category, items]) => ({
-      text: category,
-      collapsed: false,
-      items: items
-    }))
+    ...sidebarGroups
   ]
 
   return { nav, sidebar }
