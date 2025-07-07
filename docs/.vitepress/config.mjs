@@ -76,7 +76,7 @@ function generateConfig() {
       // 有二级分类的情况
       const subGroupItems = Object.entries(data.subGroups).map(([subCategory, items]) => ({
         text: subCategory,
-        collapsed: false,
+        collapsed: true,
         items: items
       }))
       
@@ -87,14 +87,14 @@ function generateConfig() {
       
       return {
         text: mainCategory,
-        collapsed: false,
+        collapsed: true,
         items: allItems
       }
     } else {
       // 没有二级分类的情况
       return {
         text: mainCategory,
-        collapsed: false,
+        collapsed: true,
         items: data.items
       }
     }
