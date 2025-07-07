@@ -2,7 +2,7 @@
 title: "Redisson分布式锁+本地缓存的典型流程"
 date: 2025-07-07
 author: cimaStone
-category: "技术架构"
+category: "技术架构/分布式缓存"  # 主分类/子分类
 tags: [Redisson分布式锁+本地缓存的典型流程]
 ---
 # Redisson分布式锁+本地缓存的典型流程
