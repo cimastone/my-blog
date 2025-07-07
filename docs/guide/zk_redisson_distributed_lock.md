@@ -1,7 +1,7 @@
 ---
-title: "搭建个人博客（vitePress）"
+title: "高并发查询场景下基于Zookeeper+Redis的分布式一致性缓存设计方案"
 date: 2025-07-05
-author: CimaStone
+author: cimaStone
 tags: [高并发查询场景下基于Zookeeper+Redis的分布式一致性缓存设计方案]
 ---
 
