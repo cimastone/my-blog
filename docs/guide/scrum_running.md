@@ -3,6 +3,7 @@ title: "团队研发流程管理 - scrum"
 date: 2025-07-07
 author: cimaStone
 tags: [团队研发流程管理 - scrum]
+category: "项目管理"
 ---
 
 # 团队研发流程管理 - scrum

@@ -3,6 +3,7 @@ title: "高并发查询场景下基于Zookeeper+Redis的分布式一致性缓存
 date: 2025-07-05
 author: cimaStone
 tags: [高并发查询场景下基于Zookeeper+Redis的分布式一致性缓存设计方案]
+category: "技术架构"
 ---
 
 # 高并发查询场景下基于Zookeeper+Redis的分布式一致性缓存设计方案
