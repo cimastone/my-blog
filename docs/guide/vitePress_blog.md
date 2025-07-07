@@ -2,6 +2,7 @@
 title: "搭建个人博客（vitePress）"
 date: 2025-07-05
 author: cimaStone
+category: "工具教程"
 tags: [个人博客搭建]
 ---
 
