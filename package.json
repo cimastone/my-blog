@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "watch": "node scripts/auto-build.js",
+    "dev:auto": "concurrently \"npm run watch\" \"npm run preview\"",
+    "dev:live": "vitepress dev docs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -10,6 +16,9 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "chokidar": "^4.0.3",
+    "concurrently": "^9.2.0",
+    "nodemon": "^3.1.10",
     "vitepress": "^1.6.3"
   },
   "dependencies": {
