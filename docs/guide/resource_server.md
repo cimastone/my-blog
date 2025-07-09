@@ -38,3 +38,20 @@ tags:
        - 如果是首次启动选举的leader,此时该模块所含的List`<pidModel>`中的instId都为null
        - 如果是follow转为leader,此时集合的key是instance表中的ID，当然也可能含有key为null的聚合，极端情况，该模块新增了pidModel，还没有作用到具体的instance时就已经down；这些新增的List`<pidModel>`没有instId
      - 将`<instId: List<pidDTO>>`数据转化为`[{instanceVo: List<pidModle>}]`填充至pidCollection#pidWithModule
+   - 根据ModuleEnum#instCount 与`[{instanceVo: List<pidModle>}]` #key的数量进行比较，根据instCount进行均分预分配`List<pidModel>`
+     - pidCollection#pidWithModule中的模块下的实例个数 == instCount，不做处理
+     - pidCollection#pidWithModule中的模块下的实例个数 == 1 < instCount，均分`List<pidModel>`为instCount份
+     - pidCollection#pidWithModule中的模块下的实例个数 == instCount + 1，这多出的1个实例则是没有归属于该模块但未分配给具体实例的`List<pidModel>`；根据instCount分成等份填充至对应的instanceVo所属的资源账户列表中
+7. 检查模块路径是否在zk生成节点，已生成则监听，未生成，创建并监听
+
+### 客户端服务器启动与资源系统交互流程
+1. 资源系统leader服务器启动时监听模块节点
+2. 客户端集群系统（需要使用资源账户的业务系统）启动时会监听所配置的模块节点，并在模块节点下创建临时节点
+3. 资源系统leader服务器监听到临时节点后
+   - 生成持久化节点的zk路径（临时节点路径 + 固定后缀）
+   - 根据持久化节点路径创建zk节点
+   - 修改临时节点data值为持久化节点路径
+4. 客户端服务器监听到临时节点数据有变化，获取data数据，并监听持久化节点
+5. 资源系统leader服务器监听到创建的持久化节点后：
+   - 如果是首次启动选举的leader，从pidCollection#pidWithModule#ModuleEnum的`[{instanceVo: List<pidModle>}]`，选取一份`List<pidModle>`批量放入该持久化节点的子路径中，并监听每个pid zk节点
+   - 如果是follow转为leader，则将zk节点的数据和pidCollection#pidWithModule（数据库数据）做比较，先做删除，所有实例都删除完成后，再做新增动作，这里使用了PidCollection#instBarrier，初始化值为所有需预分配的实例数量
