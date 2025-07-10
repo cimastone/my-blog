@@ -58,13 +58,18 @@ tags:
 4. 当zk节点的数据与数据库映射的内存数据一致时，将数据写入内存数据（PidCollection#pidMap）
 
 ### 业务操作人员操作pid同步更新至客户端流程 - leader/follow/客户端处理流程
-1. 资源系统为集群服务器，需要选举一台服务器负责写和操作zk节点，其它服务器负责读；使用zk选举leader负责写和操作zk
-2. 某台服务器被选为leader后，将通知节点对应的data数据改为已处理，因为需要从数据库中重新获取数据装进内存，则表示内存数据与数据库数据一致，设置node属性isLeader == true；这里被选择为leader服务器有两种情况
+1. 业务操作人员在页面端操作pid
+   - 针对某个模块批量新增/更新/删除pid
+   - 将某些pid从A模块下架，在B模块上架
+   - 重置pid的指令数量等
+2. 请求至资源系统leader
+   - 操作
+4. 某台服务器被选为leader后，将通知节点对应的data数据改为已处理，因为需要从数据库中重新获取数据装进内存，则表示内存数据与数据库数据一致，设置node属性isLeader == true；这里被选择为leader服务器有两种情况
    - 集群服务器共同启动，通过zab协议选举出的leader，此时instance表没有数据
    - 之前leader服务器down机，某台follow服务器选举为新的leader，此时instance表是有数据的
-4. 清理operation表
-5. 清理PidCollection#pidMap & PidCollection#pidWithModule
-6. 初始化PidCollection#pidWithModule数据
+5. 清理operation表
+6. 清理PidCollection#pidMap & PidCollection#pidWithModule
+7. 初始化PidCollection#pidWithModule数据
    - 根据depart纬度递层向下初始化，从数据库中后去depart数据，填充id至DepartEnum
    - 从模块表中获取数据填充ModuleEnum
      - 填充id至ModuleEnum
@@ -78,7 +83,7 @@ tags:
      - pidCollection#pidWithModule中的模块下的实例个数 == instCount，不做处理
      - pidCollection#pidWithModule中的模块下的实例个数 == 1 < instCount，均分`List<pidModel>`为instCount份
      - pidCollection#pidWithModule中的模块下的实例个数 == instCount + 1，这多出的1个实例则是没有归属于该模块但未分配给具体实例的`List<pidModel>`；根据instCount分成等份填充至对应的instanceVo所属的资源账户列表中
-7. 检查模块路径是否在zk生成节点，已生成则监听，未生成，创建并监听
+8. 检查模块路径是否在zk生成节点，已生成则监听，未生成，创建并监听
 
 ### 客户端资源账户指令数同步资源服务器流程 - leader/客户端处理流程
 1. 资源系统为集群服务器，需要选举一台服务器负责写和操作zk节点，其它服务器负责读；使用zk选举leader负责写和操作zk
