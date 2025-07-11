@@ -53,37 +53,34 @@ tags:
   
 ### 客户端服务器启动与资源系统交互流程（客户端zk节点已创建）
 1. 资源系统leader服务器启动时监听模块节点
-2. 会监听到所有模块下的临时节点和持久化节点事件，只处理持久化节点新增事件
+2. 监听到所有模块下的临时节点和持久化节点事件，只处理持久化节点新增事件
 3. 将持久化节点（模块）下的List```<Pid>```与数据库映射的内存数据（PidCollection#pidWithModule）进行比较，以数据库映射到的内存数据为准；**先操作服务器zk pid删除，再统一操作新增**，此处使用了CyclicBarrier
-4. 当zk节点的数据与数据库映射的内存数据一致时，将数据写入内存数据（PidCollection#pidMap）
+4. 当zk节点的数据与数据库映射的内存数据一致时，将数据写入zk 映射的内存数据（PidCollection#pidMap）
 
 ### 业务操作人员操作pid同步更新至客户端流程 - leader/follow/客户端处理流程
 1. 业务操作人员在页面端操作pid
    - 针对某个模块批量新增/更新/删除pid
    - 将某些pid从A模块下架，在B模块上架
    - 重置pid的指令数量等
-2. 请求至资源系统leader
-   - 操作
-4. 某台服务器被选为leader后，将通知节点对应的data数据改为已处理，因为需要从数据库中重新获取数据装进内存，则表示内存数据与数据库数据一致，设置node属性isLeader == true；这里被选择为leader服务器有两种情况
-   - 集群服务器共同启动，通过zab协议选举出的leader，此时instance表没有数据
-   - 之前leader服务器down机，某台follow服务器选举为新的leader，此时instance表是有数据的
-5. 清理operation表
-6. 清理PidCollection#pidMap & PidCollection#pidWithModule
-7. 初始化PidCollection#pidWithModule数据
-   - 根据depart纬度递层向下初始化，从数据库中后去depart数据，填充id至DepartEnum
-   - 从模块表中获取数据填充ModuleEnum
-     - 填充id至ModuleEnum
-     - 组装moduleEnum的zk路径
-     - 模块系统由多少台服务器填充至instCount，并以instCount构建Semaphore对象
-     - 获取属于该模块下的List`<pidModel>`，并以pidModel中所归属的instId进行聚合形成集合
-       - 如果是首次启动选举的leader,此时该模块所含的List`<pidModel>`中的instId都为null
-       - 如果是follow转为leader,此时集合的key是instance表中的ID，当然也可能含有key为null的聚合，极端情况，该模块新增了pidModel，还没有作用到具体的instance时就已经down；这些新增的List`<pidModel>`没有instId
-     - 将`<instId: List<pidDTO>>`数据转化为`[{instanceVo: List<pidModle>}]`填充至pidCollection#pidWithModule
-   - 根据ModuleEnum#instCount 与`[{instanceVo: List<pidModle>}]` #key的数量进行比较，根据instCount进行均分预分配`List<pidModel>`
-     - pidCollection#pidWithModule中的模块下的实例个数 == instCount，不做处理
-     - pidCollection#pidWithModule中的模块下的实例个数 == 1 < instCount，均分`List<pidModel>`为instCount份
-     - pidCollection#pidWithModule中的模块下的实例个数 == instCount + 1，这多出的1个实例则是没有归属于该模块但未分配给具体实例的`List<pidModel>`；根据instCount分成等份填充至对应的instanceVo所属的资源账户列表中
-8. 检查模块路径是否在zk生成节点，已生成则监听，未生成，创建并监听
+2. 请求至资源系统
+   - 如果该服务器为leader
+     1. 将需要操作的List`<pid>`通过module进行分类，抽出需要删除、新增和更新的列表
+     2. 先处理删除数据，更新数据库映射的内存数据（PidCollection#pidWithModule）
+     3. 更新zk节点，操作节点成功后更新zk映射的内存数据（PidCollection#pidMap）
+     4. 处理新增数据，根据客户端服务器数量进行预分配，更新数据库映射的内存数据（PidCollection#pidWithModule）
+     5. 更新zk节点，操作节点成功后更新zk映射的内存数据（PidCollection#pidMap）
+     6. 更新List`<pid>`时，则更新数据库映射的内存数据（PidCollection#pidWithModule），更新zk节点，操作节点成功后更新zk映射的内存数据（PidCollection#pidMap）
+     7. 全部处理完成后更新数据库数据
+   - 如果服务器为follow
+      1. 将请求数据转为操作记录表
+         - 批量新增/更新/删除：生成同一个批次号的pid操作数据
+         - A模块删除，B模块新增：生成同一个批次号的，1条删除数据和1新增数据
+      2. 把通知节点改为待处理通知leader服务器，follow服务器返回前端受理成功
+      3. leader服务器接收需处理通知，从操作记录表中获取操作数据，后续流程与请求至leader服务器流程一致
+      7. leader服务器处理完成后更新通知节点数据为已处理
+    ::: tip 服务端/客户端根据zk节点的更新/新增/删除的简易流程
+    服务端找到需要在客户端服务器节点上新增pid节点，pid节点data状态值为ADDING -> 客户端服务器接收到新增节点，把新增节点数据获取后放进资源池后，将新增pi节点的状态值改为ADDED -> 服务端后续更新zk 映射的内存数据（PidCollection#pidMap）；更新/删除同理
+    :::
 
 ### 客户端资源账户指令数同步资源服务器流程 - leader/客户端处理流程
 1. 资源系统为集群服务器，需要选举一台服务器负责写和操作zk节点，其它服务器负责读；使用zk选举leader负责写和操作zk
