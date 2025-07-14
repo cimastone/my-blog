@@ -83,24 +83,39 @@ tags:
     :::
 
 ### 客户端资源账户指令数同步资源服务器流程 - leader/客户端处理流程
-1. 资源系统为集群服务器，需要选举一台服务器负责写和操作zk节点，其它服务器负责读；使用zk选举leader负责写和操作zk
-2. 某台服务器被选为leader后，将通知节点对应的data数据改为已处理，因为需要从数据库中重新获取数据装进内存，则表示内存数据与数据库数据一致，设置node属性isLeader == true；这里被选择为leader服务器有两种情况
-   - 集群服务器共同启动，通过zab协议选举出的leader，此时instance表没有数据
-   - 之前leader服务器down机，某台follow服务器选举为新的leader，此时instance表是有数据的
-4. 清理operation表
-5. 清理PidCollection#pidMap & PidCollection#pidWithModule
-6. 初始化PidCollection#pidWithModule数据
-   - 根据depart纬度递层向下初始化，从数据库中后去depart数据，填充id至DepartEnum
-   - 从模块表中获取数据填充ModuleEnum
-     - 填充id至ModuleEnum
-     - 组装moduleEnum的zk路径
-     - 模块系统由多少台服务器填充至instCount，并以instCount构建Semaphore对象
-     - 获取属于该模块下的List`<pidModel>`，并以pidModel中所归属的instId进行聚合形成集合
-       - 如果是首次启动选举的leader,此时该模块所含的List`<pidModel>`中的instId都为null
-       - 如果是follow转为leader,此时集合的key是instance表中的ID，当然也可能含有key为null的聚合，极端情况，该模块新增了pidModel，还没有作用到具体的instance时就已经down；这些新增的List`<pidModel>`没有instId
-     - 将`<instId: List<pidDTO>>`数据转化为`[{instanceVo: List<pidModle>}]`填充至pidCollection#pidWithModule
-   - 根据ModuleEnum#instCount 与`[{instanceVo: List<pidModle>}]` #key的数量进行比较，根据instCount进行均分预分配`List<pidModel>`
-     - pidCollection#pidWithModule中的模块下的实例个数 == instCount，不做处理
-     - pidCollection#pidWithModule中的模块下的实例个数 == 1 < instCount，均分`List<pidModel>`为instCount份
-     - pidCollection#pidWithModule中的模块下的实例个数 == instCount + 1，这多出的1个实例则是没有归属于该模块但未分配给具体实例的`List<pidModel>`；根据instCount分成等份填充至对应的instanceVo所属的资源账户列表中
-7. 检查模块路径是否在zk生成节点，已生成则监听，未生成，创建并监听
+1. 客户端服务器获取到本服务器所分配的pid
+2. 根据pid#userName 从redis处获取每个pid对应的指令数使用情况
+3. 资源系统leader和客户端服务器使用RLocalCachedMap存储一份与redis分布式缓存相关联的本地缓存
+4. 客户端服务器每个pid在处理某个业务处理时，会记录处理前及处理后的pid使用量，更新本地缓存，通过redis机制更新至reids中；其它服务器如果包含该key本地缓存时，会先将本地缓存至为失效，重新从redis获取pid使用情况
+5. 服务端启动一个守护线程，每隔一段时间从redis获取对应pid使用量
+
+### 核心类介绍  
+| 名称 | 含义 |
+| :---: | :--- |
+| LocalPidResouce | 数据库数据与内存中数据映射和交互的纽带|
+| pidUtils | 承接运营人员页面操作pid后的处理，同时更新至zk |
+| PidCollection | pid收集器，包含两个核心内存数据<br> 1. pidWithModule：数据库映射的内存数据 <br> 2. pidMap: zk节点映射的内存数据 |
+| moduleNode | 操作模块及客户端服务器（InstanceVo）zk节点的核心类 |
+| pidNode | 操作具体pid zk节点的核心类  |
+| AbsNode | moduleNode&&pidNode父类，主要抽离了处理zk节点的公共方法  |
+
+## 🔍 常见问题
+### 问题1 
+**问题描述：** 操作zk只允许leader服务器处理；运营人员操作前端页面时将请求到资源系统follow服务器时，该如何将动作通知给leader服务器操作zk，同时作用到相应的客户端服务器<br>
+**解决方案：** 上面流程已详细描述；简单描述下：follow服务器将运营人员操作进行拆分成操作记录表 -> 通知leader服务器处理操作记录表 -> 先更新数据库映射的本地内存 -> 通知所关联的模块#系统#服务器的zk节点 data值为ING -> 客户端服务器将该pid进行处理，处理成功后修改zk节点值为完成状态 -> leader服务器更新zk映射的内存数据 -> 更新数据库数据
+
+### 问题2  
+**问题描述：** 客户端服务器down机，如何释放资源账户，待系统重启后该如何分配资源账户（线上服务器docker管理，发布的时候ip会变化，难以将down机前后服务器进行绑定）  
+**解决方案：** 运营操作人员首先会将部门#模块#系统#服务器数量进行预配置，资源系统leader服务器启动时将部门#模块#系统所分配的资源账户列表按服务器数量进行内存分片，并以信号量控制分配的服务器数量；当客户端服务器启动时从leader服务器内存进行分配至客户端服务器；  
+客户端down机：
+1. 客户端服务器所对应的临时节点会发出remove事件
+2. 资源系统leader服务器监听remove事件，删除zk映射的内存中客户端服务器对应的资源账户，更新数据库映射的内存中down的那台服务器的资源数据`<ModeuleEnum: [InstanceVo: List<PID>]>`;将对应的InstanceVo状态置于未分配，同时删除数据库中该Instance数据
+3. 客户端服务器重启时会重新监听模块节点，并在模块节点下创建临时节点 -> leader服务器创建持久化节点 -> 从数据库映射的内存中拿到状态为未分配的`<InstanceVo: List<PID>>` -> 新增Instance数据，将id写入InstanceVo，把pid列表节点写入Instance的子节点 -> 客户端服务器将pid列表节点登录完成后，修改pid节点状态为完成时 -> leader服务器更新zk映射节点的内存数据
+
+### 问题3  
+**问题描述：** 是否能动态的对客户端服务器进行扩容和收缩
+**解决方案：** 目前的设计是客户端服务器数量是需要与资源系统中模块#系统#服务器数量配置一致的；因为leader服务器就是通过该值进行内存预分配，但其实也是有办法的，如果某个客户端服务器数量发生变化，资源系统leader服务器能够感知，根据该客户端所分配的`List<pid>`进行重新分配；基于将影响降低最低的前提下，只需要从已分配的每台客户端服务器中抽出少量的`List<Pid>`;
+1. 先将leader服务器数据库映射的内存数据#已分配的客户端服务器`List<Pid>`进行删除
+2. 操作对应的zk数据节点，客户端响应删除成功后，删除leader服务器与zk映射的内存数据
+3. 待所有删除的客户端服务器处理完成后，数据库映射的内存数据put分配给新增客户端服务器的`List<pid>；
+4. 在新增服务器的持久化节点下创建pid zk节点，待客户端服务器处理成功后，更新leader服务器zk映射的内存数据
