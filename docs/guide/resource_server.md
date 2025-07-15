@@ -34,6 +34,11 @@ tags:
 
 ## 🔧 核心流程与控制点
 ### 资源系统集群服务启动leader服务器启动流程（首次获取leader｜follow -> leader）
+#### 流程说明
+- 采用Zookeeper进行Leader选举，确保资源分配的唯一性和一致性。
+- Leader服务器负责初始化数据、分配PID资源并监听各业务模块节点。
+- 非Leader（Follow）服务器仅接收请求并转发操作记录。
+#### 详细设计
 1. 需要只有一台服务器的对资源进行分配操作 && 操作zk节点通知客户端，采用zk 选举leader,非leader服务器接收业务操作人员请求后，会将请求内容转换为操作记录表
 2. leader服务器被通知成为leader后：
    - 将通知节点对应的data数据改为已处理（DEALED），操作记录表数据改为已处理
@@ -54,7 +59,40 @@ tags:
            └─ 只接收操作请求，不分配资源
 ```    
          
-### 客户端服务器启动与资源系统交互流程（客户端zk节点未创建）
+### 客户端服务器启动与资源系统交互（客户端zk节点未创建）
+#### 流程说明
+
+
+```mermaid
+sequenceDiagram
+    participant Client as 客户端服务器
+    participant Leader as 资源系统Leader
+    participant ZK as Zookeeper
+
+    %% 首次启动流程
+    Note over Client,Leader,ZK: 客户端首次启动（zk节点未创建）
+
+    Client->>ZK: 监听模块节点，创建临时节点
+    Leader->>ZK: 监听模块节点，发现临时节点
+    Leader->>ZK: 创建持久化节点（临时节点路径+后缀）
+    Leader->>ZK: 修改临时节点data为持久化节点路径
+    Client->>ZK: 监听临时节点data变化
+    Client->>ZK: 获取持久化节点路径，监听持久化节点
+    Leader->>ZK: 监听持久化节点
+    Leader->>ZK: 分配PID资源，写入持久化节点
+    Client->>ZK: 监听持久化节点数据变化，获取分配的PID资源
+
+    %% 已存在节点流程
+    Note over Client,Leader,ZK: 客户端服务器启动（zk节点已存在）
+
+    Leader->>ZK: 监听所有模块的临时节点和持久化节点
+    Leader->>ZK: 只处理持久化节点新增事件
+    Leader->>ZK: 比较持久化节点下的PID列表与数据库映射的内存数据
+    Leader->>ZK: 操作服务器和zk节点，使数据一致
+    Leader->>ZK: 数据一致后，写入zk映射内存数据
+```
+
+
 1. 资源系统leader服务器启动时监听模块节点
 2. 客户端服务器启动时会监听所配置的模块节点，并在模块节点下创建临时节点
 3. 资源系统leader服务器监听到临时节点后
