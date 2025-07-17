@@ -222,14 +222,13 @@ sequenceDiagram
     Redis-->>Leader: 数据变更事件（订阅/拉取）
     Leader->>Local: 更新本地缓存
 
-    %% Leader定期全量检查
+    %% Leader定时任务
     loop 定时任务
-        Leader->>Redis: 拉取所有pid使用量
-        Redis-->>Leader: 返回全量数据
-        Leader->>Local: 批量刷新本地缓存
+        Leader->>Local: 直接读取本地缓存中所有pid指令数
+        Leader->>DB: 批量写入数据库
     end
 ```
-#### 3. 代码
+#### 3. 核心代码
 ``` java
 // Redisson本地缓存配置
 LocalCachedMapOptions<String, Integer> options = LocalCachedMapOptions.<String, Integer>defaults()
@@ -279,30 +278,103 @@ for (String pid : leaderCache.keySet()) {
 ### 核心类介绍  
 | 名称 | 含义 |
 | :---: | :--- |
-| LocalPidResouce | 数据库数据与内存中数据映射和交互的纽带|
-| pidUtils | 承接运营人员页面操作pid后的处理，同时更新至zk |
-| PidCollection | pid收集器，包含两个核心内存数据<br> 1. pidWithModule：数据库映射的内存数据 <br> 2. pidMap: zk节点映射的内存数据 |
-| moduleNode | 操作模块及客户端服务器（InstanceVo）zk节点的核心类 |
+| LocalPidResouce | 数据库数据和内存（PidCollection等）之间的数据映射、交互纽带|
+| pidUtils | 处理运营人员页面操作（增删改pid），并同步变更到zk |
+| PidCollection | id收集器，维护两大核心内存<br>1. pidWithModule（DB映射）<br>2. pidMap（zk节点映射） |
+| moduleNode | 操作模块及客户端服务器（InstanceVo）zk节点的核心类，聚合若干pidNode |
 | pidNode | 操作具体pid zk节点的核心类  |
-| AbsNode | moduleNode&&pidNode父类，主要抽离了处理zk节点的公共方法  |
+| AbsNode | moduleNode与pidNode的父类，抽象出处理zk节点的公共方法  |
+| CommandCountCache | 负责pid与指令数的本地缓存和分布式同步操作 |
+| LeaderSyncTask | Leader节点定时任务：定期从本地缓存读取指令数，批量落库 |
+
+```mermaid
+classDiagram
+    %% 继承关系
+    AbsNode <|-- moduleNode
+    AbsNode <|-- pidNode
+
+    %% 关联/聚合
+    moduleNode "1" o-- "*" pidNode : 包含
+    PidCollection "1" o-- "*" LocalPidResouce : 持有
+    PidCollection "1" --> "1" CommandCountCache : 持有
+    LeaderSyncTask "1" --> "1" CommandCountCache : 使用
+    pidUtils "1" --> "1" PidCollection : 操作
+    pidUtils "1" --> "1" moduleNode : 操作
+    pidUtils "1" --> "1" pidNode : 操作
+
+    %% 注释说明
+    class AbsNode {
+        <<abstract>>
+        +commonZkMethods()
+    }
+    class moduleNode {
+        +List<pidNode> pidNodes
+        +moduleZkMethods()
+    }
+    class pidNode {
+        +pidZkMethods()
+    }
+    class LocalPidResouce {
+        +fromDb()
+        +toMemory()
+    }
+    class pidUtils {
+        +handleOperation()
+        +syncToZk()
+    }
+    class PidCollection {
+        +Map pidWithModule
+        +Map pidMap
+        +refreshFromDb()
+        +refreshFromZk()
+    }
+    class CommandCountCache {
+        +getCount(pid)
+        +updateCount(pid, count)
+    }
+    class LeaderSyncTask {
+        +syncToDb()
+    }
+```
+#### 说明
+- AbsNode 是 moduleNode 和 pidNode 的父类，封装了 ZK 节点的公共操作。
+- moduleNode 聚合多个 pidNode，代表一个模块或服务器节点下的所有 pid 节点。
+- PidCollection 维护两份核心内存映射（数据库映射、zk节点映射），并持有 LocalPidResouce 和 CommandCountCache。
+- pidUtils 是业务操作入口，处理页面操作和同步到 zk，操作 PidCollection/moduleNode/pidNode。
+- CommandCountCache 负责 pid 的指令数分布式缓存。
+- LeaderSyncTask 作为 Leader 节点的定时批量落库任务，依赖 CommandCountCache。
 
 ## 🔍 常见问题
 ### 问题1 
-**问题描述：** 操作zk只允许leader服务器处理；运营人员操作前端页面时将请求到资源系统follow服务器时，该如何将动作通知给leader服务器操作zk，同时作用到相应的客户端服务器<br>
-**解决方案：** 上面流程已详细描述；简单描述下：follow服务器将运营人员操作进行拆分成操作记录表 -> 通知leader服务器处理操作记录表 -> 先更新数据库映射的本地内存 -> 通知所关联的模块#系统#服务器的zk节点 data值为ING -> 客户端服务器将该pid进行处理，处理成功后修改zk节点值为完成状态 -> leader服务器更新zk映射的内存数据 -> 更新数据库数据
+**问题描述：** 操作 ZooKeeper 节点仅允许由 Leader 服务器进行处理。当运营人员在前端页面发起资源操作请求，并且该请求被路由到资源系统的 Follow 服务器时，如何确保操作被正确转发至 Leader 服务器执行业务处理，并同步作用到对应的客户端服务器  
+**解决方案：**   
+整体流程如下：
+1. Follow 服务器接收到运营人员的操作请求后，将操作拆分并记录到操作记录表中。
+2. Follow 服务器通知 Leader 服务器处理操作记录表中的任务。
+3. Leader 服务器先更新数据库映射的本地内存数据。
+4. Leader 通知关联的模块/系统/服务器对应的 ZooKeeper 节点，将节点 data 值设置为 ING（处理中）。
+5. 客户端服务器监听到对应 pid 节点变更后，执行实际处理操作，处理成功后将节点值更新为“完成”状态。
+6.Leader 服务器监听到节点状态变更后，刷新自身 ZooKeeper 映射的内存数据。
+7.最终，Leader 服务器同步数据库，完成所有数据一致性操作。
 
 ### 问题2  
-**问题描述：** 客户端服务器down机，如何释放资源账户，待系统重启后该如何分配资源账户（线上服务器docker管理，发布的时候ip会变化，难以将down机前后服务器进行绑定）  
-**解决方案：** 运营操作人员首先会将部门#模块#系统#服务器数量进行预配置，资源系统leader服务器启动时将部门#模块#系统所分配的资源账户列表按服务器数量进行内存分片，并以信号量控制分配的服务器数量；当客户端服务器启动时从leader服务器内存进行分配至客户端服务器；  
-客户端down机：
-1. 客户端服务器所对应的临时节点会发出remove事件
-2. 资源系统leader服务器监听remove事件，删除zk映射的内存中客户端服务器对应的资源账户，更新数据库映射的内存中down的那台服务器的资源数据`<ModeuleEnum: [InstanceVo: List<PID>]>`;将对应的InstanceVo状态置于未分配，同时删除数据库中该Instance数据
-3. 客户端服务器重启时会重新监听模块节点，并在模块节点下创建临时节点 -> leader服务器创建持久化节点 -> 从数据库映射的内存中拿到状态为未分配的`<InstanceVo: List<PID>>` -> 新增Instance数据，将id写入InstanceVo，把pid列表节点写入Instance的子节点 -> 客户端服务器将pid列表节点登录完成后，修改pid节点状态为完成时 -> leader服务器更新zk映射节点的内存数据
+**问题描述：** 在客户端服务器宕机（down机）后，如何及时释放其占用的资源账户？当系统重启且由于 Docker 部署造成 IP 变化，原服务器和新服务器无法直接绑定时，如何实现资源账户的自动重新分配？  
+**解决方案：** 
+1. 在客户端服务器宕机（down机）后，如何及时释放其占用的资源账户？当系统重启且由于 Docker 部署造成 IP 变化，原服务器和新服务器无法直接绑定时，如何实现资源账户的自动重新分配？
+2. 客户端服务器启动后，从 Leader 的内存分配池中领取自身的资源账户。
+3. 客户端服务器启动后，从 Leader 的内存分配池中领取自身的资源账户。
+4. Leader 服务器监听到 remove 事件后，删除 ZooKeeper 映射内存中该服务器的资源账户，并更新数据库映射的内存数据，将对应 InstanceVo 状态置为未分配，同时删除数据库中的该 Instance 数据。
+5. 客户端服务器重启后，会重新监听模块节点，并在其下创建自己的临时节点。Leader 服务器据此创建对应的持久化节点，并从数据库映射的内存池中提取未分配的资源账户分配给新节点，完成 Instance 数据的新增和 pid 列表节点下发。
+6. 客户端服务器完成资源账户登录后，更新 pid 节点状态为“完成”；Leader 服务器据此刷新 ZooKeeper 映射的内存数据，保障资源分配的一致性和自动化。
 
 ### 问题3  
-**问题描述：** 是否能动态的对客户端服务器进行扩容和收缩
-**解决方案：** 目前的设计是客户端服务器数量是需要与资源系统中模块#系统#服务器数量配置一致的；因为leader服务器就是通过该值进行内存预分配，但其实也是有办法的，如果某个客户端服务器数量发生变化，资源系统leader服务器能够感知，根据该客户端所分配的`List<pid>`进行重新分配；基于将影响降低最低的前提下，只需要从已分配的每台客户端服务器中抽出少量的`List<Pid>`;
-1. 先将leader服务器数据库映射的内存数据#已分配的客户端服务器`List<Pid>`进行删除
-2. 操作对应的zk数据节点，客户端响应删除成功后，删除leader服务器与zk映射的内存数据
-3. 待所有删除的客户端服务器处理完成后，数据库映射的内存数据put分配给新增客户端服务器的`List<pid>`；
-4. 在新增服务器的持久化节点下创建pid zk节点，待客户端服务器处理成功后，更新leader服务器zk映射的内存数据
+**问题描述：** 客户端服务器是否支持动态扩容或缩容？在已分配资源的情况下，如何确保资源账户的平滑迁移和一致性？  
+**解决方案：** 
+1. 当前设计要求客户端服务器数量与资源系统中配置的模块/系统/服务器数量保持一致，Leader 服务器据此进行资源的内存预分配。
+2. 若需支持动态扩缩容，Leader 服务器可实时感知客户端服务器数量变化，并根据实际分配情况重新分配资源账户。
+3. 扩容/缩容流程如下：
+   - Leader 服务器从数据库映射的内存数据和已分配客户端服务器的 List<Pid> 中回收部分资源账户。
+   - 通过 ZooKeeper 操作相应数据节点，客户端服务器按要求释放资源，释放成功后 Leader 更新本地及 ZooKeeper 映射的内存数据。
+   - 所有需回收资源账户的客户端服务器处理完成后，Leader 再将回收的资源账户分配给新增的客户端服务器。
+   - 为新增服务器创建持久化节点和对应的 pid zk 节点，客户端服务器完成处理后，Leader 更新 ZooKeeper 映射的内存数据。
+4. 以上流程保障了在动态扩缩容的场景下，资源账户的平滑迁移、分配和一致性。
