@@ -287,55 +287,7 @@ for (String pid : leaderCache.keySet()) {
 | CommandCountCache | 负责pid与指令数的本地缓存和分布式同步操作 |
 | LeaderSyncTask | Leader节点定时任务：定期从本地缓存读取指令数，批量落库 |
 
-```mermaid
-classDiagram
-    %% 继承关系
-    AbsNode <|-- moduleNode
-    AbsNode <|-- pidNode
 
-    %% 关联/聚合
-    moduleNode "1" o-- "*" pidNode : 包含
-    PidCollection "1" o-- "*" LocalPidResouce : 持有
-    PidCollection "1" --> "1" CommandCountCache : 持有
-    LeaderSyncTask "1" --> "1" CommandCountCache : 使用
-    pidUtils "1" --> "1" PidCollection : 操作
-    pidUtils "1" --> "1" moduleNode : 操作
-    pidUtils "1" --> "1" pidNode : 操作
-
-    %% 注释说明
-    class AbsNode {
-        <<abstract>>
-        +commonZkMethods()
-    }
-    class moduleNode {
-        +List<pidNode> pidNodes
-        +moduleZkMethods()
-    }
-    class pidNode {
-        +pidZkMethods()
-    }
-    class LocalPidResouce {
-        +fromDb()
-        +toMemory()
-    }
-    class pidUtils {
-        +handleOperation()
-        +syncToZk()
-    }
-    class PidCollection {
-        +Map pidWithModule
-        +Map pidMap
-        +refreshFromDb()
-        +refreshFromZk()
-    }
-    class CommandCountCache {
-        +getCount(pid)
-        +updateCount(pid, count)
-    }
-    class LeaderSyncTask {
-        +syncToDb()
-    }
-```
 #### 说明
 - AbsNode 是 moduleNode 和 pidNode 的父类，封装了 ZK 节点的公共操作。
 - moduleNode 聚合多个 pidNode，代表一个模块或服务器节点下的所有 pid 节点。
