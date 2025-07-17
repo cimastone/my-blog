@@ -336,4 +336,10 @@ classDiagram
         +syncToDb()
     }
 ```
-
+#### 说明
+- AbsNode 是 moduleNode 和 pidNode 的父类，封装了 ZK 节点的公共操作。
+- moduleNode 聚合多个 pidNode，代表一个模块或服务器节点下的所有 pid 节点。
+- PidCollection 维护两份核心内存映射（数据库映射、zk节点映射），并持有 LocalPidResouce 和 CommandCountCache。
+- pidUtils 是业务操作入口，处理页面操作和同步到 zk，操作 PidCollection/moduleNode/pidNode。
+- CommandCountCache 负责 pid 的指令数分布式缓存。
+- LeaderSyncTask 作为 Leader 节点的定时批量落库任务，依赖 CommandCountCache。
