@@ -61,16 +61,20 @@ tags:
          
 ### 客户端服务器启动与资源系统交互（客户端zk节点未创建）
 #### 流程说明
-
+1. 资源系统leader服务器启动时监听模块节点
+2. 客户端服务器启动时会监听所配置的模块节点，并在模块节点下创建临时节点
+3. 资源系统leader服务器监听到临时节点后
+   - 生成持久化节点的zk路径（临时节点路径 + 固定后缀）
+   - 根据持久化节点路径创建zk节点
+   - 修改临时节点data值为持久化节点路径
+4. 客户端服务器监听到临时节点数据有变化，获取data数据，并监听持久化节点
+5. 资源系统leader服务器监听到创建的持久化节点后，，从数据库映射的内存数据（PidCollection#pidWithModule）选取一份`List<pidModle>`批量放入该持久化节点的子路径中，并监听每个pid zk节点
 
 ```mermaid
 sequenceDiagram
     participant Client as 客户端服务器
     participant Leader as 资源系统Leader
     participant ZK as Zookeeper
-
-    %% 首次启动流程
-    Note over Client,Leader,ZK: 客户端首次启动（zk节点未创建）
 
     Client->>ZK: 监听模块节点，创建临时节点
     Leader->>ZK: 监听模块节点，发现临时节点
@@ -81,9 +85,19 @@ sequenceDiagram
     Leader->>ZK: 监听持久化节点
     Leader->>ZK: 分配PID资源，写入持久化节点
     Client->>ZK: 监听持久化节点数据变化，获取分配的PID资源
+```
 
-    %% 已存在节点流程
-    Note over Client,Leader,ZK: 客户端服务器启动（zk节点已存在）
+### 客户端服务器启动与资源系统交互流程（客户端zk节点已创建）
+1. 资源系统leader服务器启动时监听模块节点
+2. 监听到所有模块下的临时节点和持久化节点事件，只处理持久化节点新增事件
+3. 将持久化节点（模块）下的List```<Pid>```与数据库映射的内存数据（PidCollection#pidWithModule）进行比较，以数据库映射到的内存数据为准；**先操作服务器zk pid删除，再统一操作新增**，此处使用了CyclicBarrier
+4. 当zk节点的数据与数据库映射的内存数据一致时，将数据写入zk 映射的内存数据（PidCollection#pidMap）
+   
+```mermaid
+sequenceDiagram
+    participant Client as 客户端服务器
+    participant Leader as 资源系统Leader
+    participant ZK as Zookeeper
 
     Leader->>ZK: 监听所有模块的临时节点和持久化节点
     Leader->>ZK: 只处理持久化节点新增事件
@@ -92,53 +106,175 @@ sequenceDiagram
     Leader->>ZK: 数据一致后，写入zk映射内存数据
 ```
 
+### 业务操作人员操作 PID 同步更新至客户端 — 流程说明
 
-1. 资源系统leader服务器启动时监听模块节点
-2. 客户端服务器启动时会监听所配置的模块节点，并在模块节点下创建临时节点
-3. 资源系统leader服务器监听到临时节点后
-   - 生成持久化节点的zk路径（临时节点路径 + 固定后缀）
-   - 根据持久化节点路径创建zk节点
-   - 修改临时节点data值为持久化节点路径
-4. 客户端服务器监听到临时节点数据有变化，获取data数据，并监听持久化节点
-5. 资源系统leader服务器监听到创建的持久化节点后，，从数据库映射的内存数据（PidCollection#pidWithModule）选取一份`List<pidModle>`批量放入该持久化节点的子路径中，并监听每个pid zk节点
-  
-### 客户端服务器启动与资源系统交互流程（客户端zk节点已创建）
-1. 资源系统leader服务器启动时监听模块节点
-2. 监听到所有模块下的临时节点和持久化节点事件，只处理持久化节点新增事件
-3. 将持久化节点（模块）下的List```<Pid>```与数据库映射的内存数据（PidCollection#pidWithModule）进行比较，以数据库映射到的内存数据为准；**先操作服务器zk pid删除，再统一操作新增**，此处使用了CyclicBarrier
-4. 当zk节点的数据与数据库映射的内存数据一致时，将数据写入zk 映射的内存数据（PidCollection#pidMap）
+1. 业务操作人员发起操作
+   - 在页面端针对某个模块批量新增、更新、删除 pid，或将部分 pid 从 A 模块迁移到 B 模块，或重置指令数等。
+2. 请求到资源系统
+   - 若当前服务器为 Leader：
+     1. 分类整理要处理的 pid 列表（需新增、删除、更新等）。
+     2. 先处理删除，更新数据库映射的内存数据。
+     3. 操作 zk 节点，成功后同步 zk 映射内存。
+     4. 处理新增，根据客户端服务器数量进行预分配并同步数据库映射内存。
+     5. 操作 zk 节点，成功后同步 zk 内存。
+     6. 更新操作同步数据库和 zk 内存。
+     7. 所有处理完毕后，最终落库。
+   - 若当前服务器为 Follow：
+      1. 操作转为操作记录表（按批次号记录）。
+      2. 变更通知节点状态，通知 Leader 处理。
+      3. Follow 服务器直接响应“受理成功”。
+      4. Leader 服务器收到通知后，按 Leader 流程处理。
+      5. 处理完成后，更新通知节点状态为已处理。
+   - 客户端服务器同步更新
+     1. 服务端（Leader）在 zk 客户端服务器节点下新增 pid 节点，data 状态设置为 `ADDING`。
+     2. 客户端监听到新增 pid 节点，获取数据后将 PID 加入本地资源池，并将该节点状态更新为 `ADDED`。
+     3. 服务端监听到状态变为 `ADDED`，更新 zk 映射内存（PidCollection#pidMap）。
+     4. 更新、删除操作同理，均通过状态字段流转保证一致性与原子性。
 
-### 业务操作人员操作pid同步更新至客户端流程 - leader/follow/客户端处理流程
-1. 业务操作人员在页面端操作pid
-   - 针对某个模块批量新增/更新/删除pid
-   - 将某些pid从A模块下架，在B模块上架
-   - 重置pid的指令数量等
-2. 请求至资源系统
-   - 如果该服务器为leader
-     1. 将需要操作的List`<pid>`通过module进行分类，抽出需要删除、新增和更新的列表
-     2. 先处理删除数据，更新数据库映射的内存数据（PidCollection#pidWithModule）
-     3. 更新zk节点，操作节点成功后更新zk映射的内存数据（PidCollection#pidMap）
-     4. 处理新增数据，根据客户端服务器数量进行预分配，更新数据库映射的内存数据（PidCollection#pidWithModule）
-     5. 更新zk节点，操作节点成功后更新zk映射的内存数据（PidCollection#pidMap）
-     6. 更新List`<pid>`时，则更新数据库映射的内存数据（PidCollection#pidWithModule），更新zk节点，操作节点成功后更新zk映射的内存数据（PidCollection#pidMap）
-     7. 全部处理完成后更新数据库数据
-   - 如果服务器为follow
-      1. 将请求数据转为操作记录表
-         - 批量新增/更新/删除：生成同一个批次号的pid操作数据
-         - A模块删除，B模块新增：生成同一个批次号的，1条删除数据和1新增数据
-      2. 把通知节点改为待处理通知leader服务器，follow服务器返回前端受理成功
-      3. leader服务器接收需处理通知，从操作记录表中获取操作数据，后续流程与请求至leader服务器流程一致
-      7. leader服务器处理完成后更新通知节点数据为已处理
-    ::: tip 服务端/客户端根据zk节点的更新/新增/删除的简易流程
-    服务端找到需要在客户端服务器节点上新增pid节点，pid节点data状态值为ADDING -> 客户端服务器接收到新增节点，把新增节点数据获取后放进资源池后，将新增pi节点的状态值改为ADDED -> 服务端后续更新zk 映射的内存数据（PidCollection#pidMap）；更新/删除同理
-    :::
+```mermaid
+sequenceDiagram
+    participant Operator as 运营人员
+    participant Client as 客户端服务器
+    participant Follow as Follow服务器
+    participant Leader as Leader服务器
+    participant ZK as Zookeeper
+    participant DB as 数据库
 
-### 客户端资源账户指令数同步资源服务器流程 - leader/客户端处理流程
-1. 客户端服务器获取到本服务器所分配的pid
-2. 根据pid#userName 从redis处获取每个pid对应的指令数使用情况
-3. 资源系统leader和客户端服务器使用RLocalCachedMap存储一份与redis分布式缓存相关联的本地缓存
-4. 客户端服务器每个pid在处理某个业务处理时，会记录处理前及处理后的pid使用量，更新本地缓存，通过redis机制更新至reids中；其它服务器如果包含该key本地缓存时，会先将本地缓存至为失效，重新从redis获取pid使用情况
-5. 服务端启动一个守护线程，每隔一段时间从redis获取对应pid使用量
+    %% 运营人员发起操作
+    Operator->>Follow: 页面端批量操作pid（增/删/改/迁移/重置）
+
+    %% Follow 服务器处理
+    alt 当前服务器为Leader
+        Follow->>Leader: （同为Leader，直接进入Leader流程）
+    else 当前服务器为Follow
+        Follow->>DB: 记录操作到操作记录表
+        Follow->>ZK: 修改通知节点为待处理
+        Follow->>Operator: 返回受理成功
+        ZK->>Leader: 通知节点变更，Leader获得处理权
+    end
+
+    %% Leader服务器处理
+    Leader->>DB: 读取操作记录表，分类处理pid（增删改）
+    Leader->>DB: 处理删除、更新数据库映射内存
+    Leader->>ZK: 对应节点下 新增/删除/更新 pid zk节点，节点 data 状态设置为 ADDING/DELETING/UPDATING
+    Note right of Leader: 新增时为 ADDING，删除时为 DELETING，更新为 UPDATING
+
+    %% 客户端自动感知并反馈
+    ZK-->>Client: 监听到pid节点变更（如新增节点且 data=ADDING）
+    Client->>Client: 获取节点数据，将pid加入资源池，处理后将节点data设置为 ADDED/DELETED/UPDATED
+    Client->>ZK: 更新pid节点data状态
+
+    %% 服务端确认并最终同步
+    ZK-->>Leader: 监听到pid节点data变为 ADDED/DELETED/UPDATED
+    Leader->>Leader: 更新zk映射内存（PidCollection#pidMap），保证内存与zk一致
+    Leader->>DB: 所有处理完毕，最终落库
+    Leader->>ZK: 修改通知节点为已处理
+```
+#### 补充说明
+**操作记录表**：Follow 服务器将每一批次操作详细记录，确保流程可追溯、可重试。  
+**通知机制**：通过 zk 通知节点，确保 Leader 可靠接管并执行实际操作，避免多 Leader 或并发冲突。  
+**分批预分配**：新增 pid 会根据客户端服务器数均匀分配，最大化资源利用。  
+**一致性保障**：所有数据操作（数据库、zk、本地缓存）均有步骤同步校验，防止数据不一致。  
+**客户端自动化**：客户端无需人工介入，监听 zk 变更即可自动完成本地资源池的同步更新。  
+**状态流转保障一致性**：每次资源变更由服务端主导，客户端实际落地，状态字段（如 ADDING, ADDED）作为分布式事务的简单二阶段提交，确保无中间态残留。  
+**支持横向扩展**：流程天然支持客户端服务器横向扩展，任何节点的增删都能被 Leader/zk 感知并安全同步到集群。  
+**异常自恢复**：如客户端或网络异常导致同步失败，通过 zk 节点状态可自动补偿/重试。  
+
+### 客户端资源账户指令数同步资源服务器流程
+#### 1. 流程说明
+1. **客户端服务器获取分配到的 pid 列表**  
+   客户端启动后，通过监听自身 zk 节点，获知当前所持有的 pid 账户资源。
+2. **定期同步指令数使用情况**  
+  客户端服务器根据每个 pid（userName），从 Redis 查询该账户的指令数使用情况。
+3. **本地与分布式缓存协同**  
+  Leader端和客户端均使用 RLocalCachedMap 结构，将 Redis 作为分布式缓存后端，提升访问效率并减轻 Redis 压力。
+4. **指令数变更上报与下发**  
+   客户端在处理业务指令时，实时更新本地缓存，并通过 Redis 机制将最新指令数同步至其他节点，保证数据一致。
+5. **Leader端定期全量检查**  
+   Leader 定时通过守护线程从本地缓存拉取所有账户的指令数，确保全局视图统一，并可做监控与告警
+
+#### 2. 流程图
+```mermaid
+sequenceDiagram
+    participant Leader as Leader服务器
+    participant Client as 客户端服务器
+    participant Redis as Redis
+    participant Local as 本地缓存
+
+    %% 客户端启动及初始同步
+    Client->>Leader: 获取分配的pid列表
+    Leader-->>Client: 返回pid分配结果
+
+    %% 客户端获取指令数
+    Client->>Local: 查询pid指令数（优先本地缓存）
+    alt 本地缓存未命中
+        Client->>Redis: 查询pid指令数
+        Redis-->>Client: 返回指令数
+        Client->>Local: 更新本地缓存
+    end
+
+    %% 客户端处理业务指令
+    Client->>Client: 业务处理，指令数变化
+    Client->>Local: 更新本地缓存
+    Client->>Redis: 同步最新指令数
+
+    %% 其它节点获知更新
+    Redis-->>Leader: 数据变更事件（订阅/拉取）
+    Leader->>Local: 更新本地缓存
+
+    %% Leader定期全量检查
+    loop 定时任务
+        Leader->>Redis: 拉取所有pid使用量
+        Redis-->>Leader: 返回全量数据
+        Leader->>Local: 批量刷新本地缓存
+    end
+```
+#### 3. 代码
+``` java
+// Redisson本地缓存配置
+LocalCachedMapOptions<String, Integer> options = LocalCachedMapOptions.<String, Integer>defaults()
+    .cacheSize(10000)
+    .evictionPolicy(EvictionPolicy.LRU)
+    .syncStrategy(LocalCachedMapOptions.SyncStrategy.INVALIDATE) // 核心配置
+    .reconnectionStrategy(LocalCachedMapOptions.ReconnectionStrategy.CLEAR);
+
+// 业务系统服务器本地缓存：分配到的pid子集
+RLocalCachedMap<String, Integer> clientCache = redisson.getLocalCachedMap("pid_command_count", options);
+
+// 业务处理前
+public boolean canProcess(String pid, int need) {
+    Integer left = clientCache.get(pid);
+    if (left == null) {
+        // 可选：从Redis主动拉取
+        left = redisTemplate.opsForValue().get("PID_COUNT:" + pid);
+        if (left != null) pidCommandCountCache.put(pid, left);
+    }
+    // 超出则拒绝
+    return left != null && left >= need;
+}
+
+// Leader本地缓存：所有pid
+RLocalCachedMap<String, Integer> leaderCache = redisson.getLocalCachedMap("pid_command_count", options);
+
+// 当A系统某台服务器有pid变化
+clientCache.put(pid, newCount); // 自动同步至Redis，触发分布式通知
+
+// Leader自动感知变化
+Integer updatedCount = leaderCache.get(pid); // 自动失效/更新，无须主动拉取
+
+// Leader批量写库
+for (String pid : leaderCache.keySet()) {
+    Integer count = leaderCache.get(pid);
+    // 写入数据库
+}
+```
+
+#### 4. 补充说明
+**一致性保障**：客户端和Leader通过RLocalCachedMap+Redis保证数据最终一致，避免指令数统计延迟或丢失。  
+**高性能**：优先命中本地缓存，大幅减少Redis压力  
+**容灾与监控**：Leader定时全量拉取，异常时可触发告警。  
+**灵活扩展**：支持横向扩展，客户端无需关心全局视图，Leader统一全局监控。  
+**redis更新策略**： INVALIDATE 策略支撑超大规模、高变更场景，可极大降低广播量。但是如果通过本地缓存设计监听器的话，必须使用update策略，因为INVALIDATE策略是直接让本地缓存失效
 
 ### 核心类介绍  
 | 名称 | 含义 |
