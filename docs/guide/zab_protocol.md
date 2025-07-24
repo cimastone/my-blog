@@ -156,6 +156,14 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 > - Leader将最新的事务日志同步给所有Follower。
 > - 确认所有Follower的日志都和Leader一致。
 
+#### 同步流程
+1. Leader接收写请求，生成proposal（事务日志）。
+2. Leader将proposal广播给所有Follower。
+3. Follower写入本地日志后，回复ACK给Leader。
+4. Leader收到过半Follower的ACK后，认为已安全，向所有节点（包括自己）广播commit指令，正式提交该事务。
+5. 所有节点收到commit指令后，应用事务到状态机（对外可见）。
+
+
 ---
 
 ### 广播（Broadcast）阶段
@@ -322,9 +330,17 @@ Zookeeper主要异常选举场景：
 > - Paxos是通用、一致性理论的“祖师爷”，可多Leader、理论更强，但实现复杂。
 > - ZAB/FLE是为Zookeeper主从架构定制的，强调唯一Leader、顺序广播，工程实现更直接、实用。
         
+5. FLE与ZAB是什么关系？
+ - FLE（Fast Leader Election）：Zookeeper内置的Leader选举算法。
+   - 作用：保证在集群启动或Leader失效时，能快速选出唯一的新Leader。
+   - 本质：只负责谁是Leader，和日志同步与否无关。
+  
+ - ZAB（Zookeeper Atomic Broadcast）：Zookeeper的分布式一致性协议。
+   - 作用：保障Leader和Follower之间数据同步、日志复制和事务一致提交。
+   - 包含两大阶段：选举（用FLE） + 原子广播（日志同步和提交）。
 
-
-
+关系总结：FLE是ZAB协议中的“选举”子部分，ZAB覆盖了选举+日志同步的全过程。
+选Leader时用FLE，Leader产生后，日志复制与一致性保证全靠ZAB的原子广播机制。
 
 
 
