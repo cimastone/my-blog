@@ -60,7 +60,8 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 | D | 4 | 18 | 0 |
 | E | 5 | 17 | 0 |
 
-##### 初次leader选举
+**初次leader选举**
+
 **第一阶段：提名和投票**
 1. 节点启动，自认为Leader，广播投票  
    每个节点都向集群广播自己的选票（myid, zxid, epoch）。   
@@ -100,13 +101,9 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 
 4. 选举结束，集群进入工作状态
 
----
-### Discovery阶段
-> - 新Leader和所有Follower进行沟通，确定Follower的最新状态。
-> - 保证新Leader拥有集群中最新的事务日志
-
-#### leader down机，再次选举的过程，日志未同步
+**leader down机，再次选举的过程，日志未同步**
 1. 经过上一轮选举后，B为leader，B节点突然down
+ 
 | 节点 | myid | zxid | epoch |
 | :---: | :---: | :---: | :---: |
 | A | 1 | 10 | 0 |
@@ -129,8 +126,9 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 
   > 虽然A、C、D、E节点在上一轮选举最终投票都是2, 20, 0；在日志未同步的前提下，下一轮选举投票的zxid还是还是根据自身节点的日志获取的
 
-#### leader down机，再次选举的过程，日志已同步
+**leader down机，再次选举的过程，日志已同步**
 1. 经过上一轮选举后，B为leader，B节点突然down，此时需要分为两种状态
+
 | 节点 | myid | zxid | epoch |
 | :---: | :---: | :---: | :---: |
 | A | 1 | 20 | 0 |
@@ -152,23 +150,122 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
    - 按照epoch > zxid > myid规则进行第一阶段投票，最终会收敛为E节点为leader节点，只需要经过一轮投票则能快速的选举出新leader
 
 ---
-### 同步（Synchronization）阶段
-> - Leader将最新的事务日志同步给所有Follower。
-> - 确认所有Follower的日志都和Leader一致。
+### Discovery阶段（对账）
+> 主要用于收集和比较各个Follower（服务器）当前的日志状态（epoch、zxid等），为后续同步打基础。
+> - 目标：让Leader了解每个Follower日志的“最新进度”，并选出一个合适的“历史共识点”。
+> - 结果：Leader和所有Follower都知道大家的日志有哪些不同，确定后续需要同步的数据范围。
+#### 过程描述
+ - 新Leader与所有Follower建立连接，进入discovery。
+ - Leader发送“NEWLEADER/LEADERINFO”消息，Follower回复自己的最大zxid、当前epoch等信息。
+   - LEADERINFO/NEWLEADER（Leader → Follower）
+     - 内容：当前epoch、Leader的myid、可能还带有Leader的zxid。
+     - 作用：告诉Follower“我现在是新Leader，请报告你的状态”。
+   - FOLLOWERINFO/ACKEPOCH（Follower → Leader）
+     - 内容：Follower的epoch、zxid、myid。
+     - 作用：Follower向Leader汇报“我现在日志到哪了”。
+ - Leader收集所有回复后，汇总逻辑：
+   - Leader收集所有Follower的ACKEPOCH，根据所有节点的zxid、epoch判断一致性点、补齐/回退需求。
+   - 判断：自己是否为“合法Leader”，是否有过半节点支持。
+   - 计算出所有节点日志应同步到的最大zxid。
+ - 不做数据同步，只收集和比较信息。
 
-#### 同步流程
+---
+
+### 同步（Synchronization）阶段（补齐日志）
+> 主要用于实际的数据同步，即Leader将需要补齐的日志（proposal）推送给落后的Follower，使所有节点日志一致。
+> - 目标：让所有节点的日志追平到Leader的最新已commit位置。
+> - 结果：所有Follower补齐缺失的日志，达到和Leader一致的状态。
+
+#### 过程描述
+ - NEWLEADER（Leader → Follower）
+   - 内容：当前epoch、Leader的zxid、快照或日志数据（视情况而定）。
+   - 作用：告诉Follower“正式进入同步阶段”，有的实现会直接带上需要同步的日志或快照。
+ - 基于discovery结果，Leader为每个Follower制定同步计划。DIFF/TRUNC/SNAP（Leader → Follower）
+   - 内容：
+     - DIFF：发送缺失的proposal日志，让Follower补齐。对于落后的Follower，Leader会把缺失的proposal（日志条目、快照等）发送过来。
+     - TRUNC：命令Follower回滚多余日志。如果Follower有未被过半节点写入的proposal，Leader会让其回滚（truncate）。
+     - SNAP：发送快照，Follower落后太多时全量覆盖
+   - 作用：具体执行日志同步的动作。
+ - ACK（Follower → Leader），Follower收到同步数据，写入本地日志，直到与Leader一致。只要过半节点ack就可进入newleader commit，不必等所有节点。
+   - 内容：表示Follower已经处理了同步数据，日志已对齐。
+   - 作用：Follower通知Leader“同步完成”。
+ - COMMIT/UPTODATE（Leader → Follower），所有Follower同步完成后，Leader发送“NEWLEADER COMMIT”通知，Follower进入“正常服务”状态。
+   - 内容：通知Follower“同步阶段结束，可以正常服务了”。
+   - 作用：Follower收到后正式切换到“FOLLOWING”状态，开始对外服务。
+
+**常见消息类型及作用汇总表**  
+
+| 消息类型	 | 方向 | 主要内容 | 主要作用|
+| :---: | :---: | :---: | :---: |
+| LEADERINFO/NEWLEADER	 | Leader → Follower	 | epoch, myid, zxid | 宣告身份、启动discovery流程 |
+| FOLLOWERINFO/ACKEPOCH | Follower → Leader | epoch, myid, zxid | 汇报日志进度 |
+| NEWLEADER | Leader → Follower | 当前epoch、Leader的zxid、快照或日志数据（视情况而定）。 | 同步流程开始 |
+| DIFF | Leader → Follower| proposal日志 | 补齐缺失日志 |
+| TRUNC | Leader → Follower | 目标zxid | 回滚多余日志 |
+| SNAP | Leader → Follower | 快照 | 全量同步 |
+| ACK | Follower → Leader | - | 同步完成，回复Leader |
+| COMMIT/UPTODATE | Leader → Follower | - | 宣布同步结束，切换服务状态 |
+
+---
+
+**举个例子将discovery && sync阶段进行详细描述**
+
+| 节点 | myid | zxid | epoch |
+| :---: | :---: | :---: | :---: |
+| A | 1 | 10 | 0 |
+| B | 2 | 10 | 0 |
+| C | 3 | 9 | 0 |
+| D | 4 | 9 | 0 |
+| E | 5 | 8 | 0 |
+
+**discovery阶段(B为leader)**
+1. leader发送 LEADERINFO信息给各个节点
+   - B -> A: epoch=0, zxid=10, myid=2
+   - B -> C: epoch=0, zxid=10, myid=2
+   - B -> D: epoch=0, zxid=10, myid=2
+   - B -> E: epoch=0, zxid=10, myid=2
+2. follow告诉leader FOLLOWERINFO信息
+   - A -> B: epoch=0, zxid=10, myid=1
+   - C -> B: epoch=0, zxid=9, myid=3
+   - D -> B: epoch=0, zxid=9, myid=4
+   - E -> B: epoch=0, zxid=8, myid=5
+
+此时leader服务器进行汇总和判断，发现zxid=10的这条日志没有过半节点，同时判断哪些节点需要补足日志，整理如下
+ - 超过半数节点的zxid值=9；leader节点（B节点）将自己的本地日志只保留到zxid=9的日志
+ - 发送给A节点，trunc消息，将A节点zxid=10的日志进行丢弃
+ - 发给E节点补充日志zxid=9
+
+**sync阶段(B为leader)**
+1. leader先做如下动作：将自己本地日志zxid=10进行会滚
+2. leader发送NEWLEADER消息给各个节点
+   - B -> A: epoch=0, zxid=9, myid=2
+   - B -> C: epoch=0, zxid=9, myid=2
+   - B -> D: epoch=0, zxid=9, myid=2
+   - B -> E: epoch=0, zxid=9, myid=2
+3. leader发送TRUNC消息给A节点 zxid=10进行回滚
+4. leader发送DIFF消息给E节点 zxid=9进行补齐
+5. follow发给leader ack
+   - A -> B: 回滚完成，ack
+   - C -> B: 直接ack，不需要做任何处理
+   - D -> B: 直接ack，不需要做任何处理
+   - E -> B: 补足完成，ack
+
+> 注意点：
+> - leader在discover和sync阶段发送自己的zxid是不一样的，在discover阶段就只发送本地日志最新的zxid，而sync发送的NEWLEADER消息是把未超过半数节点的zxid进行回滚的数据
+> - leader在trunc zxid=10数据是在发送NEWLEADER之前就处理好了
+> - leader接收到超过半数的ack即可发送commit消息
+---
+
+### 广播（Broadcast）阶段（正常处理请求）
+> - Leader接收客户端写请求，生成Proposal，广播给所有Follower。
+> - 超过半数Follower写入成功后，Leader向所有节点发送commit指令，正式提交该事务。
+> - 
+#### 广播流程
 1. Leader接收写请求，生成proposal（事务日志）。
 2. Leader将proposal广播给所有Follower。
 3. Follower写入本地日志后，回复ACK给Leader。
 4. Leader收到过半Follower的ACK后，认为已安全，向所有节点（包括自己）广播commit指令，正式提交该事务。
 5. 所有节点收到commit指令后，应用事务到状态机（对外可见）。
-
-
----
-
-### 广播（Broadcast）阶段
-> - Leader接收客户端写请求，生成Proposal，广播给所有Follower。
-> - 超过半数Follower写入成功后，Leader向所有节点发送commit指令，正式提交该事务。
 
 #### 日志同步后，原子广播（日志同步）
 1. E节点为leader，此时处理了多次请求，zxid不断累积，并同步至其它follow，同时B节点恢复，当前所有节点的各元素值
@@ -183,9 +280,27 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 
 ---
 
-### 崩溃恢复
+### 崩溃恢复（重新选举+同步）
 > - 如果Leader宕机，重新选举新Leader，并通过日志同步恢复一致性，重复上述流程。
-   
+>
+
+
+
+---
+这些是Zookeeper节点状态机的不同阶段，每个节点会在不同选举/同步流程中切换：
+
+| 状态 | 场景与含义 |
+| :---: | :---: |
+| LOOKING | 正在寻找Leader（比如选举进行中），还没有确定谁是Leader | 
+| DISCOVERY | 新Leader与Follower建立联系，收集日志状态（epoch/zxid），确定日志同步点（部分实现合成到SYNCING） |
+| SYNCING | 日志同步阶段，Leader给Follower补齐缺失日志或让其回滚，直到日志一致 |
+| FOLLOWING | Follower已与Leader日志同步完成，正常跟随Leader接受和应用事务 |
+| LEADING | 本节点是Leader，负责处理客户端请求、广播proposal、commit等 |
+
+#### 崩溃恢复流程
+ - 发生Leader宕机/网络分区等异常，触发重新选举。
+ - 新Leader通过Discovery和同步阶段，恢复所有节点到一致状态。
+ - 所有commit过的操作不会丢失，未commit的proposal会被丢弃。
 
 --- 
 
