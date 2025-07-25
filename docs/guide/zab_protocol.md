@@ -101,33 +101,106 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 
 4. 选举结束，集群进入工作状态
 
-**leader down机，再次选举的过程，日志未同步**
-1. 经过上一轮选举后，B为leader，B节点突然down
- 
+---
+
+### 广播（Broadcast）阶段（正常处理请求）
+> - Leader接收客户端写请求，生成Proposal，广播给所有Follower。
+> - 超过半数Follower写入成功后，Leader向所有节点发送commit指令，正式提交该事务。
+```bash
+Client --> Leader --> Follower
+   |         |           |
+   |--req--->|           |
+   |         |--proposal->|
+   |         |--proposal->| ...
+   |         |<-ack------ |
+   |         |<-ack------ | ...
+   |         |            |
+   |<--commit通知(过半)---|
+```
+#### 流程说明
+1. 客户端发送写请求到Leader。
+2. Leader生成Proposal（带zxid），将请求转为事务提案，发送给所有Follower。**此时leader的zxid值已更新**
+3. Follower写入本地日志后，回复ACK给Leader。**follow zxid值已更新**
+4. Leader收到过半Follower的ACK后（包括自己），认为此Proposal被原子持久化
+5. Leader广播commit消息，通知所有Follower提交。
+6. 所有节点应用事务到状态机（对外可见），对客户端响应。
+
+#### 场景举例
+1. Client向A请求“set x=1”。
+2. A生成Proposal（zxid=101），同步给B、C、D、E。
+3. B、C、D收到后写日志，分别返回ack。
+4. A收到B/C/D的ack（共4票，过半），说明提案已被原子广播。
+5. A广播commit（zxid=101）给B/C/D/E。
+6. 全部节点应用zxid=101，x=1，完成原子广播。
+
+---
+
+### 崩溃恢复（重新选举+同步）
+> - 崩溃恢复指的是Leader节点宕机或集群大部分节点短暂不可用后，系统如何恢复一致性、重新提供服务的过程。
+> - 关键目标是：保证数据不丢失、不乱序，所有节点达成一致，并安全切换新Leader。
+
+#### 崩溃恢复流程
+ 1. 崩溃检测与重新选举（Leader Election）
+ 2. 新Leader发现（Discovery Phase）
+ 3. 日志同步（Synchronization Phase/Sync）
+ 4. 恢复正常服务（Broadcast/Commit）
+
+---
+
+#### 崩溃检测与重新选举（Leader Election）
+这个举几个常见的场景详细描述
+
+**1. leader proposal leader已写入，未广播至follow**
+> B为leader
+
 | 节点 | myid | zxid | epoch |
 | :---: | :---: | :---: | :---: |
-| A | 1 | 10 | 0 |
+| A | 1 | 19 | 0 |
 | B | 2 | 20 | 0 |
-| C | 3 | 15 | 0 |
-| D | 4 | 18 | 0 |
-| E | 5 | 17 | 0 |
+| C | 3 | 19 | 0 |
+| D | 4 | 19 | 0 |
+| E | 5 | 19 | 0 |
 
-2. B节点down机，通过心跳机制和超时机制，follow节点发现B节点down机，A、C、D、E都会发起新的一轮选举，当然会有先后，举例E节点开始发起新的选举
-   - 将epoch + 1处理，向集群内A、C、D节点发起投票
-   - A、C、D节点根据是否检测到leader down做以下处理
-     - 检测到leader down时，epoch + 1进行广播自身节点
-     - 未检测到leader down时，但收到E节点广播，发现epoch == 1，此时不需要等待超时，直接将自己节点的epoch == E节点广播的epoch值，广播自身节点
-     - 各节点投票内容：
-       - A投票：1, 10, 1
-       - C投票：3, 15, 1
-       - D投票：4, 18, 1
-       - E投票：5, 17, 1
-   - 按照epoch > zxid > myid规则进行第一阶段投票，最终会收敛为D节点为leader节点，只需要经过一轮投票则能快速的选举出新leader
+- leader down机，通过心跳机制和超时机制，follow节点发现B节点down机，A、C、D、E都会发起新的一轮选举，当然会有先后，举例A节点开始发起新的选举
+  - 将epoch+1处理，A广播内容：myid:1, zxid:19, epoch:1；
+  - C、D、E节点根据是否检测到leader down做以下处理
+    - 检测到leader down时，各节点epoch + 1进行广播自身节点
+    - 未检测到leader down时，但收到A节点广播，发现epoch=1，**此时不需要等待超时，直接将自己节点的epoch=1**，广播自身节点
+    - 各节点投票内容：
+      - C投票：myid:3, zxid:19, epoch:1；
+      - D投票：myid:4, zxid:19, epoch:1；
+      - E投票：myid:4, zxid:19, epoch:1；  
+ - 根据epoch > zxid > myid规则进行第一阶段投票，最终会收敛为E节点为leader节点，只需要经过一轮投票则能快速的选举出新leader
 
-  > 虽然A、C、D、E节点在上一轮选举最终投票都是2, 20, 0；在日志未同步的前提下，下一轮选举投票的zxid还是还是根据自身节点的日志获取的
+---
 
-**leader down机，再次选举的过程，日志已同步**
-1. 经过上一轮选举后，B为leader，B节点突然down，此时需要分为两种状态
+**2. leader proposal已广播未commit**
+> B为leader
+
+| 节点 | myid | zxid | epoch |
+| :---: | :---: | :---: | :---: |
+| A | 1 | 19 | 0 |
+| B | 2 | 20 | 0 |
+| C | 3 | 20 | 0 |
+| D | 4 | 19 | 0 |
+| E | 5 | 19 | 0 |
+
+1. leader down机，通过心跳机制和超时机制，follow节点发现B节点down机，A、C、D、E都会发起新的一轮选举，当然会有先后，举例A节点开始发起新的选举
+  - 将epoch+1处理，A广播内容：myid:1, zxid:19, epoch:1；
+  - C、D、E节点根据是否检测到leader down做以下处理
+    - 检测到leader down时，各节点epoch + 1进行广播自身节点
+    - 未检测到leader down时，但收到A节点广播，发现epoch=1，**此时不需要等待超时，直接将自己节点的epoch=1**，广播自身节点
+    - 各节点投票内容：
+      - C投票：myid:3, zxid:20, epoch:1；
+      - D投票：myid:4, zxid:19, epoch:1；
+      - E投票：myid:4, zxid:19, epoch:1；  
+2. 根据epoch > zxid > myid规则进行第一阶段投票，最终会收敛为C节点为leader节点，只需要经过一轮投票则能快速的选举出新leader
+3. C节点在后续的discovery阶段会发现zxid=20的日志未被半数以上节点认可，在sync阶段会先将zxid=20日志进行回滚
+
+--- 
+
+**3. leader leader已commit**
+> B为leader
 
 | 节点 | myid | zxid | epoch |
 | :---: | :---: | :---: | :---: |
@@ -135,26 +208,28 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 | B | 2 | 20 | 0 |
 | C | 3 | 20 | 0 |
 | D | 4 | 20 | 0 |
-| E | 5 | 20 | 0 |
+| E | 5 | 19 | 0 |
 
-2. B节点down机，通过心跳机制和超时机制，follow节点发现B节点down机，A、C、D、E都会发起新的一轮选举，当然会有先后，举例E节点开始发起新的选举
-   - 将epoch + 1处理，向集群内A、C、D节点发起投票
-   - A、C、D节点根据是否检测到leader down做以下处理
-     - 检测到leader down时，epoch + 1进行广播自身节点
-     - 未检测到leader down时，但收到E节点广播，发现epoch == 1，此时不需要等待超时，直接将自己节点的epoch == E节点广播的epoch值，广播自身节点
-     - 各节点投票内容：
-       - A投票：1, 20, 1
-       - C投票：3, 20, 1
-       - D投票：4, 20, 1
-       - E投票：5, 20, 1
-   - 按照epoch > zxid > myid规则进行第一阶段投票，最终会收敛为E节点为leader节点，只需要经过一轮投票则能快速的选举出新leader
+1. leader down机，通过心跳机制和超时机制，follow节点发现B节点down机，A、C、D、E都会发起新的一轮选举，当然会有先后，举例A节点开始发起新的选举
+  - 将epoch+1处理，A广播内容：myid:1, zxid:20, epoch:1；
+  - C、D、E节点根据是否检测到leader down做以下处理
+    - 检测到leader down时，各节点epoch + 1进行广播自身节点
+    - 未检测到leader down时，但收到A节点广播，发现epoch=1，**此时不需要等待超时，直接将自己节点的epoch=1**，广播自身节点
+    - 各节点投票内容：
+      - C投票：myid:3, zxid:20, epoch:1；
+      - D投票：myid:4, zxid:20, epoch:1；
+      - E投票：myid:4, zxid:19, epoch:1；  
+2. 根据epoch > zxid > myid规则进行第一阶段投票，最终会收敛为D节点为leader节点，只需要经过一轮投票则能快速的选举出新leader
+3. D节点在后续的discovery阶段会发现zxid=20的日志只有E节点需要补全，在sync阶段会发DIFF消息至E节点进行补足
 
----
-### Discovery阶段（对账）
+--- 
+
+#### 新Leader发现阶段（Discovery Phase）（对账）
 > 主要用于收集和比较各个Follower（服务器）当前的日志状态（epoch、zxid等），为后续同步打基础。
 > - 目标：让Leader了解每个Follower日志的“最新进度”，并选出一个合适的“历史共识点”。
 > - 结果：Leader和所有Follower都知道大家的日志有哪些不同，确定后续需要同步的数据范围。
-#### 过程描述
+
+##### 过程描述
  - 新Leader与所有Follower建立连接，进入discovery。
  - Leader发送“NEWLEADER/LEADERINFO”消息，Follower回复自己的最大zxid、当前epoch等信息。
    - LEADERINFO/NEWLEADER（Leader → Follower）
@@ -169,14 +244,13 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
    - 计算出所有节点日志应同步到的最大zxid。
  - 不做数据同步，只收集和比较信息。
 
----
-
+#### 日志同步阶段（Sync Phase）
 ### 同步（Synchronization）阶段（补齐日志）
 > 主要用于实际的数据同步，即Leader将需要补齐的日志（proposal）推送给落后的Follower，使所有节点日志一致。
 > - 目标：让所有节点的日志追平到Leader的最新已commit位置。
 > - 结果：所有Follower补齐缺失的日志，达到和Leader一致的状态。
 
-#### 过程描述
+##### 过程描述
  - NEWLEADER（Leader → Follower）
    - 内容：当前epoch、Leader的zxid、快照或日志数据（视情况而定）。
    - 作用：告诉Follower“正式进入同步阶段”，有的实现会直接带上需要同步的日志或快照。
@@ -192,21 +266,6 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
  - COMMIT/UPTODATE（Leader → Follower），所有Follower同步完成后，Leader发送“NEWLEADER COMMIT”通知，Follower进入“正常服务”状态。
    - 内容：通知Follower“同步阶段结束，可以正常服务了”。
    - 作用：Follower收到后正式切换到“FOLLOWING”状态，开始对外服务。
-
-**常见消息类型及作用汇总表**  
-
-| 消息类型	 | 方向 | 主要内容 | 主要作用|
-| :---: | :---: | :---: | :---: |
-| LEADERINFO/NEWLEADER	 | Leader → Follower	 | epoch, myid, zxid | 宣告身份、启动discovery流程 |
-| FOLLOWERINFO/ACKEPOCH | Follower → Leader | epoch, myid, zxid | 汇报日志进度 |
-| NEWLEADER | Leader → Follower | 当前epoch、Leader的zxid、快照或日志数据（视情况而定）。 | 同步流程开始 |
-| DIFF | Leader → Follower| proposal日志 | 补齐缺失日志 |
-| TRUNC | Leader → Follower | 目标zxid | 回滚多余日志 |
-| SNAP | Leader → Follower | 快照 | 全量同步 |
-| ACK | Follower → Leader | - | 同步完成，回复Leader |
-| COMMIT/UPTODATE | Leader → Follower | - | 宣布同步结束，切换服务状态 |
-
----
 
 **举个例子将discovery && sync阶段进行详细描述**
 
@@ -254,41 +313,52 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 > - leader在discover和sync阶段发送自己的zxid是不一样的，在discover阶段就只发送本地日志最新的zxid，而sync发送的NEWLEADER消息是把未超过半数节点的zxid进行回滚的数据
 > - leader在trunc zxid=10数据是在发送NEWLEADER之前就处理好了
 > - leader接收到超过半数的ack即可发送commit消息
+
+---
+  
+#### 恢复正常服务（Broadcast/Commit）
+- 新Leader收到过半Follower的同步ack后，向所有Follower发送COMMIT/UPTODATE消息，告知同步完成、集群恢复服务。
+- 所有节点切换为“Following”或“Leading”状态，开始正常处理客户端请求。
+
+```plaintext
+[崩溃检测]
+A宕机
+B/C/D/E检测到A失联，启动选举
+
+[选举]
+B获胜，成为Leader
+
+[Discovery]
+B发LEADERINFO给C/D/E
+C/D/E回报各自zxid/epoch
+B收集信息，判断集体最大zxid=108
+
+[Sync]
+B补齐D/E日志到108（发送proposal）
+B等待C/D/E的ack（同步完成）
+B自己本地无需truncate
+
+[Commit]
+B发COMMIT/UPTODATE通知所有节点
+B/C/D/E切换为正常服务状态
+```
+
 ---
 
-### 广播（Broadcast）阶段（正常处理请求）
-> - Leader接收客户端写请求，生成Proposal，广播给所有Follower。
-> - 超过半数Follower写入成功后，Leader向所有节点发送commit指令，正式提交该事务。
-> - 
-#### 广播流程
-1. Leader接收写请求，生成proposal（事务日志）。
-2. Leader将proposal广播给所有Follower。
-3. Follower写入本地日志后，回复ACK给Leader。
-4. Leader收到过半Follower的ACK后，认为已安全，向所有节点（包括自己）广播commit指令，正式提交该事务。
-5. 所有节点收到commit指令后，应用事务到状态机（对外可见）。
+**常见消息类型及作用汇总表**  
 
-#### 日志同步后，原子广播（日志同步）
-1. E节点为leader，此时处理了多次请求，zxid不断累积，并同步至其它follow，同时B节点恢复，当前所有节点的各元素值
-| 节点 | myid | zxid | epoch |
+| 消息类型	 | 方向 | 主要内容 | 主要作用|
 | :---: | :---: | :---: | :---: |
-| A | 1 | 30 | 1 |
-| B | 2 | 20 | 0 |
-| C | 3 | 30 | 1 |
-| D | 4 | 30 | 1 |
-| E | 5 | 30 | 1 |
-2. B节点重启后，会从E节点同步数据，最终zxid和epoch都会更新至与leader一致，此时E节点再次接收到外部请求
+| LEADERINFO/NEWLEADER	 | Leader → Follower	 | epoch, myid, zxid | 宣告身份、启动discovery流程 |
+| FOLLOWERINFO/ACKEPOCH | Follower → Leader | epoch, myid, zxid | 汇报日志进度 |
+| NEWLEADER | Leader → Follower | 当前epoch、Leader的zxid、快照或日志数据（视情况而定）。 | 同步流程开始 |
+| DIFF | Leader → Follower| proposal日志 | 补齐缺失日志 |
+| TRUNC | Leader → Follower | 目标zxid | 回滚多余日志 |
+| SNAP | Leader → Follower | 快照 | 全量同步 |
+| ACK | Follower → Leader | - | 同步完成，回复Leader |
+| COMMIT/UPTODATE | Leader → Follower | - | 宣布同步结束，切换服务状态 |
 
----
-
-### 崩溃恢复（重新选举+同步）
-> - 如果Leader宕机，重新选举新Leader，并通过日志同步恢复一致性，重复上述流程。
->
-
-
-
----
-这些是Zookeeper节点状态机的不同阶段，每个节点会在不同选举/同步流程中切换：
-
+**这些是Zookeeper节点状态机的不同阶段，每个节点会在不同选举/同步流程中切换：**
 | 状态 | 场景与含义 |
 | :---: | :---: |
 | LOOKING | 正在寻找Leader（比如选举进行中），还没有确定谁是Leader | 
@@ -296,11 +366,6 @@ Zookeeper的选举算法经历过几次迭代，主要有：Basic Majority Vote�
 | SYNCING | 日志同步阶段，Leader给Follower补齐缺失日志或让其回滚，直到日志一致 |
 | FOLLOWING | Follower已与Leader日志同步完成，正常跟随Leader接受和应用事务 |
 | LEADING | 本节点是Leader，负责处理客户端请求、广播proposal、commit等 |
-
-#### 崩溃恢复流程
- - 发生Leader宕机/网络分区等异常，触发重新选举。
- - 新Leader通过Discovery和同步阶段，恢复所有节点到一致状态。
- - 所有commit过的操作不会丢失，未commit的proposal会被丢弃。
 
 --- 
 
