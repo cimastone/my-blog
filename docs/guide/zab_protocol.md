@@ -244,8 +244,7 @@ Client --> Leader --> Follower
    - 计算出所有节点日志应同步到的最大zxid。
  - 不做数据同步，只收集和比较信息。
 
-#### 日志同步阶段（Sync Phase）
-### 同步（Synchronization）阶段（补齐日志）
+#### 日志同步阶段（Synchronization）（补齐日志）
 > 主要用于实际的数据同步，即Leader将需要补齐的日志（proposal）推送给落后的Follower，使所有节点日志一致。
 > - 目标：让所有节点的日志追平到Leader的最新已commit位置。
 > - 结果：所有Follower补齐缺失的日志，达到和Leader一致的状态。
