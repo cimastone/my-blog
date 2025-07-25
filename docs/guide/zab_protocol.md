@@ -337,10 +337,10 @@ Zookeeper主要异常选举场景：
 
 | 状态 | 场景与含义 |
 | :---: | :---: |
-| LOOKING | 正在选举Leader，还未确定 |
+| LOOKING | - 正在选举Leader <br> - 通过投票/通信，寻找和确认当前集群的Leader是谁（即使最终发现别人已经是Leader，也会退出LOOKING）。|
 | DISCOVERY | 新Leader收集Follower日志状态，确定同步点 |
 | SYNCING | 日志同步阶段，补齐或回滚日志 |
-| FOLLOWING | Follower已同步完成，正常跟随Leader |
+| FOLLOWING/OBSERVING | 确认了Leader是谁，自己跟随Leader|
 | LEADING | 本节点为Leader，处理写请求与广播 |
 
 ---
@@ -359,6 +359,21 @@ Zookeeper主要异常选举场景：
    - epoch（又叫term、轮次、时期）用来标记选举或协议推进的“轮数”。
    - 每当开始新一轮选举或发生重大变更时，epoch就会+1。
    - epoch越大，代表越“新”的一轮，优先级高。
+
+leader服务器down机，在选举阶段，第一个通过超时检测的节点epoch+1；其它的节点两种情况：
+- 也超时检测到leader down机，自身epoch+1，发起广播
+- 还未检测到leader down机，但收到epoch+1广播消息，此时不需要等到超时检测，自身节点epoch+1，发起广播选举
+
+防止“旧Leader复活”造成一致性破坏
+- 在分布式环境中，网络分区或Leader短暂失联时，旧Leader有可能还活着，但集群已经选出了新Leader（新epoch）。
+- 如果旧Leader恢复后还以为自己是Leader，并且继续对外服务或广播proposal，就会导致脑裂、数据不一致。
+
+总结：
+- **最大epoch机制确保只有最新一轮选举产生的Leader能服务，所有旧Leader都会被识别和废弃。**
+- 这杜绝了因网络分区、误判、Leader复活等造成的“双Leader/脑裂/数据冲突”风险。
+- 这是ZAB/FLE等分布式一致性协议在保证强一致性、单一主控的核心技术点之一。
+- epoch递增是每次选举的局部属性，只有获得Quorum支持的epoch才生效。
+
 
 ---
 
@@ -433,6 +448,95 @@ Zookeeper主要异常选举场景：
 选Leader时用FLE，Leader产生后，日志复制与一致性保证全靠ZAB的原子广播机制。
 
 ---
+
+6. 集群中Observer
+
+Observer（观察者）是Zookeeper 3.3.0版本引入的一种节点角色。它不参与主节点选举和写操作投票，但可以同步数据并响应客户端读请求。
+
+作用：
+   - 扩展读能力
+     - Observer节点接收Leader的事务同步，与Follower保持数据一致。
+     - 它可以独立响应客户端的读请求，从而提升集群的读吞吐能力，不影响主投票集。
+     - 可横向扩展，用于提高读吞吐和数据冗余。
+   - 不参与写一致性投票
+     - Observer不参与Leader选举，也不参与写请求的Quorum投票。
+     - 写操作（如事务Proposal的ack和commit）只依赖于Follower和Leader的ack，Observer的ack不会计入写入Quorum。
+     - 这样可以在不影响写一致性的前提下，扩展读性能和集群规模。
+    - 减少跨地域写延迟
+      - 在跨地域部署时，可将远程机房节点设为Observer，避免因网络延迟影响写入主流程，同时本地提供读能力和数据备份。
+
+应用场景举例：
+- 大规模集群：核心投票节点保持奇数（如5台），其余节点均为Observer，提升读能力且不影响写一致性。
+- 跨地域容灾：远程Observer节点同步主集群数据，实现异地备份和就近读服务，提升整体可用性和扩展性。
+
+问题解析：
+1. 大规模集群（100个）节点，只有5个节点能成为leader/follow，如果5个节点中有节点down机后会怎么样？
+   - 5个节点有节点down机后，还是剩下的节点参与选举，不会从observe节点中补足节点，哪些节点能参与选举在配置文件中有定义
+   - 当存活节点小于Quorum（多数派）时，整个集群不可接受请求，无法选举leader，所以需要衡量好可用和一致性的平衡
+
+2. 是否可能存在脏读：
+   - Observer节点读取数据，出现脏数据的概率非常低，但理论上存在极小的可能性。
+   - Zookeeper的所有节点（包括Observer）都会同步Leader的所有已commit事务，因此Observer通常能读到最新已提交的数据。
+   - 但Zookeeper是“最终一致性”，不是强一致性，在极个别场景下，Observer读到的数据可能比Leader稍旧，尤其是在网络延迟、同步滞后的情况下。
+
+**解决方案：**  
+- 大多数业务对这种“亚秒级最终一致性”能容忍。
+- 如果对强一致性有要求（比如必须读到最新写入的数据），应将读请求发到Leader，或使用“同步读”机制（如调用sync()后再读）。
+- Zookeeper客户端有sync()方法，可以强制节点与Leader对齐后再读，避免脏读。
+
+---
+
+7. 重启的节点如何恢复数据
+
+- 节点初始值
+  - zxid：节点重启时，会从本地磁盘上的日志文件和快照中恢复，恢复到重启前最后commit的zxid。
+  - epoch：节点重启时，通常会记住上次的epoch（持久化在磁盘中，如currentEpoch文件），恢复后作为自己当前epoch。
+- 以looking的状态重启，主动尝试寻找leader
+  - 无leader时，加入选举投票，这里有个细节着重说明，重启的节点之前如果是leader节点，并且快速启动参与选举，这时可能会重新成为leader
+    - down机前，Proposal已写入未广播，此时重启节点的zxid最大，成为leader后，因最新zxid未被过半节点数包含，在sync阶段会truncate
+    - down机前，Proposal已广播未commit，这时分为两类场景：
+      - 过半节点已写入proposal，未ack：此时重启节点的zxid不是最大，不一定会成为leader，但未commit的那条日志不会被丢失，会重新带入新的集群内
+      - 未达到过半节点写入proposal，此时不一定会成为leader，down机前的proposal在新leader#sync阶段会回滚
+  - 有leader时，与leader建立连接，leader主动发送LEADERINFO/NEWLEADER等消息，进入discovery/sync阶段日志同步
+
+---
+
+8. Proposal已写入 VS proposal未commit
+
+- proposal已写入
+  - 通常指Leader节点已经把proposal日志写入到本地磁盘，并开始向其他Follower节点广播proposal。
+  - 这时，proposal只在Leader（和可能部分Follower）日志中存在，还没有达成集群共识。
+
+- proposal未commit
+  - 指该proposal尚未收到过半节点的ack确认（Leader还未统计到Quorum），也就是还没有“commit”。
+  - 这时proposal对外是不可见的，也不会被应用到状态机。
+ 
+**二者关系**  
+- 本质上是同一阶段的不同描述：
+  - “已写入”强调日志已落地但未达成共识，
+  - “未commit”强调还没进入可见的commit状态。
+- 在ZAB协议语境下，一个proposal只有在被commit之前，无论是刚写入还是已被部分Follower写入，都属于“未commit”状态。
+
+---
+
+8. 原子广播状态，是不是必须得leader commit后才能接受客户端下一个请求?
+
+不是必须等 Leader commit 后才能接收下一个客户端请求，但有顺序和队列的控制。
+详细解释：
+  - Leader可以并发接收多个客户端请求
+    - Leader节点可以连续不断地接收客户端的写请求，并为每个请求生成 proposal（事务日志），分配递增 zxid。
+    - 这些 proposal 可以批量或流水线（pipeline）方式广播给 follower。
+  - Leader可以为多个请求生成 proposal 并同时广播
+    - Leader可以在前一个 proposal 尚未 commit 时，先为后续请求生成 proposal 并广播，从而提升吞吐量。
+    - 这就是Zookeeper支持的“流水线提交（pipelining）”能力。
+  - commit顺序严格受zxid控制
+    - 多个proposal的commit必须严格按zxid顺序应用。
+    - follower收到commit指令，也必须按zxid顺序apply到状态机。
+    - follow ack消息中会携带zxid，不会导致commit错误
+  - 但客户端“线性一致性”有保护
+    - 如果客户端要求严格线性一致性（如同步写），Leader通常会等前一个请求commit后再向客户端返回成功。
+    - 但Leader本身不需要等commit再accept下一个请求，只是客户端感知层面有个“事务已落地”的等待。
+
 
 
 
