@@ -146,7 +146,7 @@ Client --> Leader --> Follower
 | E | 5 | 19 | 0 |
 
 - B宕机，A/C/D/E发起选举，最终C（zxid=20）成为Leader。
-- 后续discovery阶段，C会发现zxid=20日志未被过半认可，在sync阶段回滚。
+- 后续discovery阶段，C会发现zxid=20日志未被过半认可，在sync阶段回滚。**这里描述的过半认可是指是否超过半数节点写入zxid=20即可;不一定是已经ack 或者 该proposal 已commit**，只要超过半数节点含有zxid=20,哪怕没有commit，zxid=20数据也不会丢失
 
 --- 
 
@@ -206,7 +206,7 @@ Client --> Leader --> Follower
 > - leader在discover和sync阶段发送消息中的zxid是不一样的
 >   - discover阶段发送本地日志最新的zxid=10，
 >   - sync阶段NEWLEADER消息是发送超过半数节点zxid=9,把未超过半数节点的zxid进行回滚
-> - leader在trunc zxid=10数据是在发送NEWLEADER之前就处理好了
+> - leader在trunc zxid=10数据是在发送NEWLEADER之前就处理好了，该动作属于sync准备阶段
 
 ---
 
@@ -532,7 +532,7 @@ Observer（观察者）是Zookeeper 3.3.0版本引入的一种节点角色。它
   - commit顺序严格受zxid控制
     - 多个proposal的commit必须严格按zxid顺序应用。
     - follower收到commit指令，也必须按zxid顺序apply到状态机。
-    - follow ack消息中会携带zxid，不会导致commit错误
+    - follow ack消息中会携带zxid，不会导致commit错乱，同时哪怕是zxid大的消息先收到过半数的ack，也需要判断前面的proposal是否commit,如果没有则会等待；**commit顺序永远严格递增，永远不会乱序。**
   - 但客户端“线性一致性”有保护
     - 如果客户端要求严格线性一致性（如同步写），Leader通常会等前一个请求commit后再向客户端返回成功。
     - 但Leader本身不需要等commit再accept下一个请求，只是客户端感知层面有个“事务已落地”的等待。
