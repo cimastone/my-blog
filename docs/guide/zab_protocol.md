@@ -336,8 +336,8 @@ Zookeeper主要异常选举场景：
 ## 七、节点状态机阶段
 
 | 状态 | 场景与含义 |
-| :---: | :---: |
-| LOOKING | - 正在选举Leader <br> - 通过投票/通信，寻找和确认当前集群的Leader是谁（即使最终发现别人已经是Leader，也会退出LOOKING）。|
+| :---: | :--- |
+| LOOKING | 1. 正在选举Leader <br> 2. 通过投票/通信，寻找和确认当前集群的Leader是谁（即使最终发现别人已经是Leader，也会退出LOOKING）。|
 | DISCOVERY | 新Leader收集Follower日志状态，确定同步点 |
 | SYNCING | 日志同步阶段，补齐或回滚日志 |
 | FOLLOWING/OBSERVING | 确认了Leader是谁，自己跟随Leader|
@@ -348,17 +348,17 @@ Zookeeper主要异常选举场景：
 ## 八、核心概念解读与协议对比
 
 1. Quorum（多数派）在Zookeeper中的定义
-   - Zookeeper采用Quorum机制，多数派=集群节点数的半数以上。
-   - 如果有5个节点：A、B、C、D、E。半数以上是3票（因为5/2=2.5，向上取整为3）。
+- Zookeeper采用Quorum机制，多数派=集群节点数的半数以上。
+- 如果有5个节点：A、B、C、D、E。半数以上是3票（因为5/2=2.5，向上取整为3）。
 
 通过Quorum（多数派）机制防止网络分区时的脑裂场景，只允许多数派的分区选Leader，少数派的分区只能等待恢复通信。如果你看到“两个分区都能选Leader”这种说法，通常指的是理论上如果协议实现有问题或者集群配置不合理时才会出现，正常情况下Zookeeper不会这样
 
 ---
 
 2. 什么是epoch？
-   - epoch（又叫term、轮次、时期）用来标记选举或协议推进的“轮数”。
-   - 每当开始新一轮选举或发生重大变更时，epoch就会+1。
-   - epoch越大，代表越“新”的一轮，优先级高。
+- epoch（又叫term、轮次、时期）用来标记选举或协议推进的“轮数”。
+- 每当开始新一轮选举或发生重大变更时，epoch就会+1。
+- epoch越大，代表越“新”的一轮，优先级高。
 
 leader服务器down机，在选举阶段，第一个通过超时检测的节点epoch+1；其它的节点两种情况：
 - 也超时检测到leader down机，自身epoch+1，发起广播
@@ -378,15 +378,16 @@ leader服务器down机，在选举阶段，第一个通过超时检测的节点e
 ---
 
 3. 如何判断老Leader down机？
-  Zookeeper等分布式系统通常采用心跳机制和超时检测来判断Leader是否存活：
-    - 心跳机制：Follower节点会定期向Leader发送心跳包，或者Leader定期向Follower发送心跳包。
-    - 超时检测：如果在某个超时时间（如 sessionTimeout）内没有收到Leader的心跳/响应，Follower就认为Leader已经失效（Down机、网络不可达等）。
 
-  **详细流程举例：**  
-  - 节点A是Leader，节点B/C/D/E是Follower。
-  - B、C、D、E持续等待A的心跳。
-  - 如果B在超时时间内（比如2秒、5秒）没有收到A的心跳，就判断A已不可用。
-  - 一旦检测到Leader不可用，B就会触发新一轮选举。
+Zookeeper等分布式系统通常采用心跳机制和超时检测来判断Leader是否存活：
+- 心跳机制：Follower节点会定期向Leader发送心跳包，或者Leader定期向Follower发送心跳包。
+- 超时检测：如果在某个超时时间（如 sessionTimeout）内没有收到Leader的心跳/响应，Follower就认为Leader已经失效（Down机、网络不可达等）。
+
+**详细流程举例：**  
+- 节点A是Leader，节点B/C/D/E是Follower。
+- B、C、D、E持续等待A的心跳。
+- 如果B在超时时间内（比如2秒、5秒）没有收到A的心跳，就判断A已不可用。
+- 一旦检测到Leader不可用，B就会触发新一轮选举。
 
 ---
 
@@ -436,11 +437,11 @@ leader服务器down机，在选举阶段，第一个通过超时检测的节点e
 ---
 
 5. FLE与ZAB是什么关系？
- - FLE（Fast Leader Election）：Zookeeper内置的Leader选举算法。
+- FLE（Fast Leader Election）：Zookeeper内置的Leader选举算法。
    - 作用：保证在集群启动或Leader失效时，能快速选出唯一的新Leader。
    - 本质：只负责谁是Leader，和日志同步与否无关。
   
- - ZAB（Zookeeper Atomic Broadcast）：Zookeeper的分布式一致性协议。
+- ZAB（Zookeeper Atomic Broadcast）：Zookeeper的分布式一致性协议。
    - 作用：保障Leader和Follower之间数据同步、日志复制和事务一致提交。
    - 包含两大阶段：选举（用FLE） + 原子广播（日志同步和提交）。
 
@@ -462,8 +463,8 @@ Observer（观察者）是Zookeeper 3.3.0版本引入的一种节点角色。它
      - Observer不参与Leader选举，也不参与写请求的Quorum投票。
      - 写操作（如事务Proposal的ack和commit）只依赖于Follower和Leader的ack，Observer的ack不会计入写入Quorum。
      - 这样可以在不影响写一致性的前提下，扩展读性能和集群规模。
-    - 减少跨地域写延迟
-      - 在跨地域部署时，可将远程机房节点设为Observer，避免因网络延迟影响写入主流程，同时本地提供读能力和数据备份。
+   - 减少跨地域写延迟
+     - 在跨地域部署时，可将远程机房节点设为Observer，避免因网络延迟影响写入主流程，同时本地提供读能力和数据备份。
 
 应用场景举例：
 - 大规模集群：核心投票节点保持奇数（如5台），其余节点均为Observer，提升读能力且不影响写一致性。
@@ -472,7 +473,7 @@ Observer（观察者）是Zookeeper 3.3.0版本引入的一种节点角色。它
 问题解析：
 1. 大规模集群（100个）节点，只有5个节点能成为leader/follow，如果5个节点中有节点down机后会怎么样？
    - 5个节点有节点down机后，还是剩下的节点参与选举，不会从observe节点中补足节点，哪些节点能参与选举在配置文件中有定义
-   - 当存活节点小于Quorum（多数派）时，整个集群不可接受请求，无法选举leader，所以需要衡量好可用和一致性的平衡
+   - 当存活节点小于Quorum（多数派）时，整个集群不可接受请求，无法选举leader，所以需要衡量好可用性和一致性的平衡
 
 2. 是否可能存在脏读：
    - Observer节点读取数据，出现脏数据的概率非常低，但理论上存在极小的可能性。
@@ -493,9 +494,9 @@ Observer（观察者）是Zookeeper 3.3.0版本引入的一种节点角色。它
   - epoch：节点重启时，通常会记住上次的epoch（持久化在磁盘中，如currentEpoch文件），恢复后作为自己当前epoch。
 - 以looking的状态重启，主动尝试寻找leader
   - 无leader时，加入选举投票，这里有个细节着重说明，重启的节点之前如果是leader节点，并且快速启动参与选举，这时可能会重新成为leader
-    - down机前，Proposal已写入未广播，此时重启节点的zxid最大，成为leader后，因最新zxid未被过半节点数包含，在sync阶段会truncate
+    - down机前，Proposal已写入未广播，此时重启节点的zxid最大，较大概率成为leader，因最新zxid未被过半节点数包含，在sync阶段会truncate
     - down机前，Proposal已广播未commit，这时分为两类场景：
-      - 过半节点已写入proposal，未ack：此时重启节点的zxid不是最大，不一定会成为leader，但未commit的那条日志不会被丢失，会重新带入新的集群内
+      - 过半节点已写入proposal未ack && 过半节点ack但未commit：此时重启节点的zxid不是最大，不一定会成为leader，**但未commit广播的那条日志不会丢失，会重新带入新的集群内**
       - 未达到过半节点写入proposal，此时不一定会成为leader，down机前的proposal在新leader#sync阶段会回滚
   - 有leader时，与leader建立连接，leader主动发送LEADERINFO/NEWLEADER等消息，进入discovery/sync阶段日志同步
 
