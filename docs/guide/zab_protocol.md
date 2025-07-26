@@ -2,7 +2,7 @@
 title: "zab协议流程详解"
 date: 2025-07-23
 author: cimaStone
-category: "技术架构/zab协议流程"
+category: "技术架构/zab协议流程详解"
 tags: 
   - 技术架构
   - zab协议
