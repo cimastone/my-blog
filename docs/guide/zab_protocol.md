@@ -1,5 +1,5 @@
 ---
-title: "zab协议流程"
+title: "zab协议流程详解"
 date: 2025-07-23
 author: cimaStone
 category: "技术架构/zab协议流程"
@@ -520,7 +520,7 @@ Observer（观察者）是Zookeeper 3.3.0版本引入的一种节点角色。它
 
 ---
 
-8. 原子广播状态，是不是必须得leader commit后才能接受客户端下一个请求?
+9. 原子广播状态，是不是必须得leader commit后才能接受客户端下一个请求?
 
 不是必须等 Leader commit 后才能接收下一个客户端请求，但有顺序和队列的控制。
 详细解释：
