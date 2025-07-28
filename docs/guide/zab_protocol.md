@@ -183,7 +183,9 @@ Client --> Leader --> Follower
 | E | 5 | 8 | 0 |
 
 - Leader（B）发送LEADERINFO，收集Follower zxid。
-- 过半节点zxid=9，B本地truncate到9。
+- 新leader节点会判断zxid=10的这条日志是否为已commit
+  - **如果已commit，哪怕没有达到超过半节点，leader节点在同步阶段也会同步该条日志数据**
+  - **如果未commit，则过半节点zxid=9，B本地truncate到9。**
 - 后续同步阶段各节点分别处理日志。
 
 ---
