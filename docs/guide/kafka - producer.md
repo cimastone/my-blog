@@ -114,7 +114,8 @@ Kafka 的元数据包括但不限于：
 #### 1.1 Producer 请求到 Controller 非 Leader 节点
 
 - Producer 或管理员客户端（如 kafka-topics.sh）向任意 Controller 节点发起“创建 topic”请求。
-- 如果这个节点不是 Raft quorum 的 leader，会重定向请求到 controller leader（或者 client 发现后直连 leader）。
+- 这个 broker 会检测到自己不是当前的 Controller Leader，直接返回 NOT_CONTROLLER 错误给客户端。
+- 客户端（如 kafka-topics.sh、AdminClient）收到这个错误后，会自动刷新元数据、发现新的 Controller Leader，然后后续的相关请求会直接发给新的 Controller Leader。
   
 #### 1.2 Controller Leader 处理流程
 1. **生成元数据变更记录**
