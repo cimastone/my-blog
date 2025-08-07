@@ -1,0 +1,16 @@
+---
+title: "kafka - broker"
+date: 2025-07-23
+author: cimaStone
+category: "技术架构/kafka"
+tags: 
+  - broker
+  - kafka
+---
+
+# kafka - broker
+
+## 🎯 背景
+   该篇文章主要讲述的是broker内部相关的设计，如：controller、replication、HWX等
+
+## 一、Kafka的核心概念
