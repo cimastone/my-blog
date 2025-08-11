@@ -1,0 +1,75 @@
+---
+title: "kafka - consumer"
+date: 2025-07-23
+author: cimaStone
+category: "技术架构/kafka"
+tags: 
+  - broker
+  - kafka
+---
+
+# kafka - consumer
+
+## 🎯 背景
+   该篇文章主要讲述的是consumer的相关设计
+
+## 一、consumer解压数据
+
+标准流程是Consumer解压，Broker通常不主动解压。
+
+标准场景：
+Producer发的是压缩batch，Broker直接落盘，Consumer拉取后自己解压，这是最常见的路径。
+
+正常情况下，consumer请求offset范围内的数据，broker会尽量以batch为单位返回数据。
+- 批量获取：
+ - consumer请求数据时，broker会读取log segment，根据offset找到符合条件的batch。
+ - 如果请求的offset只涵盖batch的一部分，broker可以选择：
+  - 直接返回整个batch（最常见），consumer收到后自行解压，过滤出需要的消息（比如消息1～100，consumer只要40个，但broker还是发1～100整个batch）。
+  - 某些情况下（如过滤、事务、协议限制），broker会解压batch，抽取需要的消息，再重新压缩后发给consumer。
+  - 但这种情况少见、开销大，Kafka更倾向于直接发batch，效率更高。
+ - consumer端通常有cache，可以避免重复解压同一个batch。
+
+Consumer的offset推进与事务消息可见性
+- Kafka Consumer（以read_committed隔离级别为例）维护着“当前已消费offset”（即position）。
+- Consumer拉取数据时，是按顺序从当前offset开始依次拉取，比如上次消费到了offset=10，下次会从offset=11开始拉。
+- 如果之前某个offset（如offset=8）是未commit事务消息，当时被跳过，position依然往后推进（比如到10）。
+
+当Producer提交事务，写入commit marker（比如offset=11）后，代表offset=8的事务消息已可见。
+但是Kafka Consumer不会“回头”去自动重读offset=8的数据，除非你手动seek回去。
+Consumer会继续从自己的position（比如offset=10或11）往后拉新数据。之前跳过的未commit事务消息，不会因为commit marker出现而被自动补读。
+Kafka Consumer不会自动倒回position补读先前被跳过的事务消息。
+
+问题1: 如果默认机制是不会补读的话，那事务消息不是很容易丢失么？
+
+Consumer的offset推进逻辑
+- Kafka Consumer在read_committed模式下，如果遇到未commit的事务消息（比如offset=8），会跳过它，但不会提交offset=8的消费位点，也就是说，position依然停留在offset=8，继续尝试拉取8，直到它变得可见。
+  - 只有真正取到可读消息，offset才会推进。
+  - 如果offset=8一直不可见，consumer会尝试拉取offset=9、10等，但永远不会把自己的position(commit offset)推进到8之后，除非8的事务提交。
+
+实际行为举例
+- 比如consumer poll到offset=8，发现是未commit事务消息，那么consumer内部会：
+ - 跳过offset=8，继续尝试拉取offset=9、10等（如果有消息可读）。
+ - 但是提交的消费进度不会超过offset=8，也就是说consumer的commit offset依然卡在8。
+ - 下次poll时，还是会从offset=8开始读，如果事务已commit，consumer就能读到。
+ - 只有成功消费了offset=8，commit offset才会推进到9。
+
+Kafka源码行为支撑
+- 这是Kafka read_committed消费者的标准行为，确保“精确一次”消费，不会因为事务未提交而丢消息。
+- 这种机制下，事务消息只会被延迟消费，不会被丢弃或遗漏。
+
+read_committed模式下未提交事务消息的消费位点行为
+- 核心原则：Kafka consumer只有“成功消费（即消息可见）”的消息，才会推进自己的消费位点（position/commit offset）。
+- 如果consumer遇到offset=8是未提交事务消息：
+ - consumer会跳过8，尝试拉取9、10等。
+ - 但offset=8之前都不可commit，commit offset不会推进到8以后。
+
+关键机制：
+Kafka的消费位点是严格递增且连续推进的。
+只有在8被消费（即事务已commit且消费成功）后，commit offset才能推进到9，接着才会推进到10、11...
+如果在8未commit时消费了9和10，这些消息的消费状态“只在内存里”，并不会commit（不算真正“完成”）。
+一旦8变为可见，下次poll时consumer会重新从8开始拉取，并且9、10还会被重新拉取（即有“重复消费”的可能），因为commit offset还没推进过去。
+
+机制实现原理
+- 消费位点（commit offset）控制：只有当所有低于或等于某offset的消息都被成功消费（含事务已commit），consumer才会提交这个offset。
+- poll时拉取区间：通常是从position（上次commit offset+1）开始，按顺序拉取。遇到不可见消息时跳过，但不会推进commit offset。
+- 重复消费场景：如果8迟迟未commit，consumer可能多次消费9、10。等8可见后，consumer会顺序从8开始拉取，9和10会再次消费。
