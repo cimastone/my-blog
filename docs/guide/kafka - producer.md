@@ -315,6 +315,23 @@ Record Batch结构简述
 - batch包括：batch头（包含magic、offset、长度、压缩算法、事务信息等）和消息体。
 - 一个batch里的消息是同一个producer一次发送/flush的。
 
+### Kafka Producer的Asynchronous Send与批量机制详解
+
+1. 异步发送（Asynchronous Send）
+- Producer发送消息时，通常不会阻塞等待broker响应，而是把消息写入本地缓冲区（buffer）。
+- 后台线程会批量收集、组装这些消息，然后一起发送到broker。
+- 这样可以减少网络请求次数，提高整体吞吐量。
+
+2. 批量机制（Batching）
+- Producer端会自动将多条消息打包为一个“批次”发送，每批最大条数和最大体积可配置（如batch.size）。
+- 批量发送可以显著提升吞吐量，因为：
+ - 合并多个小消息为一个大请求，减少网络和磁盘IO次数。
+ - Broker端也能高效顺序写入批量消息。
+- 但批量过大也可能增加单条消息的延迟，因为buffer填满前消息会“等待”组批。
+
+3. 性能权衡
+- 批量越大，吞吐量越高，但单条消息延迟越大（牺牲实时性）。
+- 可通过调整batch.size和linger.ms（最大等待时间）进行灵活控制，实现“吞吐-延迟”之间的平衡。
 
 ## 四、producer事务
 
