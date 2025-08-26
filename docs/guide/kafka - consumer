@@ -13,6 +13,10 @@ tags:
 ## 🎯 背景
    该篇文章主要讲述的是consumer的相关设计
 
+## 一、核心概念
+
+- Consumer（消费者）：从Kafka集群拉取消息的客户端应用。
+
 ## 一、consumer解压数据
 
 标准流程是Consumer解压，Broker通常不主动解压。
