@@ -65,7 +65,7 @@ sudo docker run -it --name vitepress-blog \
 # 进入容器后执行，需要在项目根目录，也就是docs同级目录
 npx vitepress dev docs --host
 
-# 对vitepress进行编译，其目的是编译后，会在 your_project_path/docs/.vitepress/dist编译成html文件
+# 对vitepress进行编译，其目的是编译后，会在 your_project_path/docs/.vitepress/dist编译成html文件  --- 2 找到workspace,执行该命令
 npx vitepress build docs
 
 # 关掉docker
@@ -74,7 +74,7 @@ docker stop vitepress-blog
 # 启动docker
 docker start -ai vitepress-blog
 
-#从服务器中进入docker内部
+#从服务器中进入docker内部  --- 1
 docker exec -it vitepress-blog bash
 
 # 查询vitepress ｜ mermaid版本 
