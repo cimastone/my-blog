@@ -74,11 +74,18 @@ tags:
 | Marketable Securities | 短期投资 | 类似理财 |
 | Accounts Receivable | 应收账款 | 用来算 DSO |
 | Inventory | 存货 | 用来算 DIO |
+| Prepaid expenses and other current assets | 预付费用及其他流动资产 | 已经付钱但未来才确认费用（如房租、保险）；过高可能影响现金利用效率 |
 | Property & Equipment | 固定资产 | 重资产公司高 |
-| Goodwill | 商誉 | 并购溢价，可能减值 |
+| Operating lease assets | 使用权资产（租赁资产） | 新会计准则下确认的“租来的资产”；要和租赁负债一起看 |
+| Goodwill | 商誉 | 并购溢价形成；过高需警惕减值风险（虚胖资产） |
 | Intangibles | 无形资产 | 专利、品牌 |
+| Deferred income tax assets | 递延所得税资产 | 未来可以少交税；本质是“税收优惠的存量” |
+| Non-marketable equity securities | 非上市股权投资 | 投资未上市公司；估值不透明，波动可能影响利润 |
+| Other assets | 其他资产 | 杂项科目；占比过高要警惕“藏东西” |
 | Total Assets | 总资产 | 公司规模 |
 | Accounts Payable | 应付账款 | 用来算 DPO |
+| Accrued and other current liabilities | 应计及其他流动负债 | 已发生但未支付（工资、费用）；是“隐性负债” |
+| Long-term operating lease liabilities | 长期租赁负债 | 与使用权资产对应；本质类似债务，要计入杠杆分析 |
 | Debt | 债务 | 分短期/长期 |
 | Deferred Revenue | 递延收入 | ⭐ 先收钱（优质） |
 | Total Liabilities | 总负债 | 风险指标 |
@@ -106,8 +113,12 @@ tags:
 | 科目 | 含义 | 特别说明 |
 |------|------|----------|
 | Net Income | 净利润 | 起点（非现金） |
-| Depreciation & Amortization | 折旧摊销 | 要加回（非现金） |
 | Stock-Based Compensation | 股权激励 | 不花现金但会稀释 |
+| Depreciation & Amortization | 折旧摊销 | 要加回（非现金） |
+| Gains on non-marketable & publicly-held equity securities, net | 股权投资收益（含未上市和上市） | 非主营收益；波动大，不能当“稳定赚钱能力” |
+| Deferred income taxes | 递延所得税 | 非现金项目；用于调节利润与现金流差异 |
+
+| Accrued and other current liabilities | 应计负债变动 | 增加→现金流入（拖付款）；减少→现金流出 |
 | Changes in Working Capital | 营运资金变化 | ⭐ 现金流核心变量 |
 | Operating Cash Flow | 经营现金流 | 最重要现金指标 |
 | Capex | 资本开支 | 真金白银支出 |
@@ -115,6 +126,10 @@ tags:
 | Share Repurchase | 股票回购 | 利好股东 |
 | Debt Issuance | 借债 | 现金流入 |
 | Debt Repayment | 还债 | 现金流出 |
+
+
+
+
 
 ---
 
