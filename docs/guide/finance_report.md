@@ -130,14 +130,22 @@ tags:
 | Other long-term liabilities | 其它长期负债 | 增加→现金流入（拖付款）；减少→现金流出 |
 | Changes in Working Capital | 营运资金变化 | ⭐ 现金流核心变量，这边主要是针对Changes in operating assets and liabilities, net of acquisitions科目内容 |
 | Operating Cash Flow | 经营现金流 | net income -> ocf通过Adjustments to reconcile和Changes in Working Capital进行调整；去掉非现金和非经营现金活动 |
-| Capex | 资本开支 | 设备（GPU、服务器等）、厂房、数据中心，属于Cash Flow from Investing Activities（CFI）#Purchases of property and equipment |
+| Proceeds from sales of marketable securities | 出售“可交易证券”收到的现金 | 卖掉股票 / 债券（短期投资），收到现金；是“卖出的钱”，不是利润 |
+| Proceeds from maturities of marketable securities | 持有到期收回本金 | 买的是债券（比如国债），到期后拿回本金，债券面值（到期收回的钱）|
+| Proceeds from sales of non-marketable equity securities | 出售“非上市股权” | 投资未上市公司（VC、股权投资），卖掉后收现金，出售价格（现金流入）|
+| Purchases of marketable securities | 买入可交易证券（股票/债券）| 投资股票 / 短期债券，买入花的钱（现金流出）|
+| Purchases of non-marketable equity securities | 投资非上市公司| 投VC项目 / 买私募股权，投资金额（现金流出）|
+| Groq, Inc | 单独列出来的重大投资| 对某公司（Groq）的大额投资 / 金额大 → 单列，和上一条一样，只是重大项目单独披露|
+| Capex | 资本开支（服务器 / GPU、数据中心、设备、软件资产）  | 设备（GPU、服务器等）、厂房、数据中心，属于Cash Flow from Investing Activities（CFI）#Purchases related to property and equipment and intangible assets |
+| Acquisitions, net of cash acquired | 并购支出（扣掉买到的现金）| 花了钱/但对方账上也有现金，= 收购支付金额 - 被收购公司现金|
+| Proceeds related to employee stock plans | 公司通过员工股票计划获得的现金流入。这通常是在员工行使股票期权时，公司会收到现金。员工以设定价格购买股票，支付现金给公司| 现金流入（正数）/ 资产负债表：现金↑，APIC（资本溢价）↑|
+| Payments related to repurchases of common stock | 公司用现金回购自己的股票，这部分流出的钱需要记入融资现金流| 现金流出（负数）/ 资产负债表：现金↓，股东权益↓（通过减少股票数量或 treasury stock）|
+| Payments related to employee stock plan taxes | 员工股票计划涉及的税款支付，公司为员工股票计划相关税费支付现金。公司为员工行使股票期权时支付的税费（通常按股票市场价格计算）| 现金流出（负数）/ 资产负债表：现金↓，应付税款↑|
+| Dividends paid | 公司支付的现金股息，通常用于奖励股东 / 每股股息 × 已发行的股票数量| 现金流出（负数）/ 资产负债表：现金↓，股东权益↓（通过 retained earnings）|
+| Principal payments on property and equipment and intangible assets | 公司购买长期资产（如设备、厂房、软件）时支付的现金流出，属于投资类支出。| 现金流出（负数）/ 资产负债表：现金↓，固定资产↑|
+| Debt Repayment | 公司偿还债务本金的现金流出，通常包括银行贷款和发行债券的本金偿还。 | 现金流出（负数）/ 资产负债表：现金↓，负债↓（减少债务） |
+| Debt Issuance | 公司借钱（发债 / 银行贷款） | 现金↑、负债↑ |
 | Free Cash Flow | 自由现金流 | = OCF - Capex |
-| Share Repurchase | 股票回购 | 利好股东 |
-| Debt Issuance | 借债 | 现金流入 |
-| Debt Repayment | 还债 | 现金流出 |
-
-
-
 
 
 ---
@@ -171,3 +179,37 @@ tags:
 | Operating Cash Flow Margin （CFO Margin）| CFO / Revenue | 收入转化为经营现金能力 | 越高越好 | 现金赚钱能力
 | Free Cash Flow Margin（FCF Margin） | FCF / Revenue | 收入转化为自由现金能力 | ⭐核心指标 | 看公司“赚钱质量”
 | FCF Conversion Ratio（Cash Earnings Ratio） | FCF / Net Income | 净利润转化为自由现金能力 | 越高越好 | 看“最终能留下多少钱”
+
+四、疑惑解答
+
+1. CFF中的Principal payments on property and equipment and intangible assets和CFI#Purchases related to property and equipment and intangible assets区别？
+
+``` code
+  CFI：买资产本身（Capex）
+  CFF：为买资产而“融资/还钱”的现金流
+```
+
+| 项目                        | 所在  | 本质   | 代表什么       |
+| ------------------------- | --- | ---- | ---------- |
+| Purchases of P&E          | CFI | 投资行为 | 买设备/资产     |
+| Principal payments on P&E | CFF | 融资行为 | 为设备融资后“还钱” |
+
+拆开讲清楚
+
+CFI：Purchases of P&E（Capex）：👉 公司直接用现金买资产；买服务器花 100，现金流 CFI：-100，👉 纯投资行为（不用借钱）
+CFF：Principal payments on P&E：👉 公司不是一次付钱，而是“分期/融资买”，比如融资租赁（finance lease）、分期付款买设备； 买服务器花 100，第一年：付本金 20，CFF: -20; 👉 这是在还“融资负债”
+
+为什么会这样分？
+
+👉 因为现金流量表要区分：经营 vs 投资 vs 融资
+🟢 情况1：直接买（现金）CFI：-100
+🔵 情况2：借钱买 / 融资租赁:买的时候：不影响现金流，之后还钱：CFF
+
+引申另一个问题；👉 Capex ≠ 现金流中的所有设备支出，而是：Capex = CFI + 融资租赁部分（隐藏在CFF）；
+
+> Capex通常指CFI中的Purchases of property and equipment。
+> 如果公司使用融资租赁或分期付款，
+> 则当期新增的非现金Capex不会体现在CFI中，
+> 而后续偿还本金会体现在CFF中。
+
+---
