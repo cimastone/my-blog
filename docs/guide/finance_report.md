@@ -1,35 +1,46 @@
 ---
-title: "财务报表学习总结"
+title: "第一周"
 date: 2026-03-30
 author: cimaStone
-category: "财务报表/第一周"
-tags: 
+category: "财务报表"
+tags:
   - 利润表
   - 资产负债表
   - 现金流表
 ---
 
-财务报表学习的目的只是为了让自己做离money更近的事情；以NVIDIA公司为例
+财务报表学习的目的：只是为了让自己做离 money 更近的事情；以 **NVIDIA** 公司为例。
 
-***
+---
 
-利润表
+## 目录
+- [一、利润表（Income Statement）](#一利润表income-statement)
+- [二、资产负债表（Balance Sheet）](#二资产负债表balance-sheet)
+- [三、现金流量表（Cash Flow Statement）](#三现金流量表cash-flow-statement)
+- [四、三表之间的关系（必须掌握）](#四三表之间的关系必须掌握)
+- [五、核心财务指标](#五核心财务指标)
+- [六、疑惑解答](#六疑惑解答)
+
+---
+
+## 一、利润表（Income Statement）
+
 <img width="1431" height="689" alt="image" src="https://github.com/user-attachments/assets/03837bde-02f2-47e5-b885-a756e3758059" />
 
-**说明：** ：👉 这个财年周期 看“赚不赚钱”
+> **说明**：👉 这个财年周期看「赚不赚钱」
 
-**结构逻辑：**
+### 结构逻辑
 > 收入 → 成本 → 毛利润 → 费用 → 净利润
 
-**重点关注：**
-  * 毛利率（产品是否有竞争力）
-  * 净利润（最终赚多少）
+### 重点关注
+- 毛利率（产品是否有竞争力）
+- 净利润（最终赚多少）
 
-**关键能力：**
-  * 判断公司盈利能力
-  * 分析利润来源是否健康
+### 关键能力
+- 判断公司盈利能力
+- 分析利润来源是否健康
 
-**关键科目：**
+### 关键科目
 | 科目 | 含义 | 特别说明 |
 |------|------|----------|
 | Revenue | 公司总收入 | 看增长（YoY）最重要 |
@@ -49,32 +60,33 @@ tags:
 
 ---
 
-资产负债表
+## 二、资产负债表（Balance Sheet）
+
 <img width="1438" height="567" alt="image" src="https://github.com/user-attachments/assets/e62e339e-3d71-4e0d-a4a7-02ae2461948c" />
 <img width="1432" height="560" alt="image" src="https://github.com/user-attachments/assets/66adb336-6450-4050-b30a-71ab3ec2d766" />
 
-**说明：** 👉 看当前公司总的 “家底”和“欠债”
+> **说明**：👉 看当前公司总的「家底」和「欠债」
 
-**核心公式：**
-  > 资产 = 负债 + 所有者权益
+### 核心公式
+> 资产 = 负债 + 所有者权益
 
-**重点理解：**
-  * 资产：公司有什么（现金、存货、设备）
-  * 负债：欠了谁的钱（借款、应付账款）
-  * 所有者权益：股东的钱
+### 重点理解
+- 资产：公司有什么（现金、存货、设备）
+- 负债：欠了谁的钱（借款、应付账款）
+- 所有者权益：股东的钱
 
-**关键能力：**
-  * 判断公司“稳不稳”（偿债能力）
-  * 看负债是否过高（财务风险）
+### 关键能力
+- 判断公司“稳不稳”（偿债能力）
+- 看负债是否过高（财务风险）
 
-**关键科目：**
+### 关键科目
 | 科目 | 含义 | 特别说明 |
 |------|------|----------|
-| Cash & Equivalents | 现金 | 安全性最高，现金流表中的Cash and cash equivalents at end of period |
+| Cash & Equivalents | 现金 | 安全性最高；对应现金流表中的 *Cash and cash equivalents at end of period* |
 | Marketable Securities | 短期投资 | 类似理财 |
 | Accounts Receivable | 应收账款 | 用来算 DSO |
 | Inventory | 存货 | 用来算 DIO |
-| Prepaid expenses and other current assets | 预付费用及其他流动资产 | 已经付钱但未来才确认费用（如房租、保险）；过高可能影响现金利用效率 |
+| Prepaid expenses and other current assets | 预付费用及其他流动资产 | 已付钱但未来才确认费用（如房租、保险）；过高可能影响现金利用效率 |
 | Property & Equipment | 固定资产 | 重资产公司高 |
 | Operating lease assets | 使用权资产（租赁资产） | 新会计准则下确认的“租来的资产”；要和租赁负债一起看 |
 | Goodwill | 商誉 | 并购溢价形成；过高需警惕减值风险（虚胖资产） |
@@ -90,12 +102,11 @@ tags:
 | Deferred Revenue | 递延收入 | ⭐ 先收钱（优质） |
 | Total Liabilities | 总负债 | 风险指标 |
 | Shareholders’ Equity | 股东权益 | 用来算 ROE |
-| Preferred stock, $0.001 par value; 2 shares authorized; none issued | 优先股 | 给到投资人，能优先分红，破产优先清算但无投票权；面值$0.001, 允许发行2股，但是没有发行 |
-| Common stock, $0.001 par value; 80,000 shares authorized; 24,304 shares issued and outstanding as of January 25, 2026; 24,477 shares issued and outstanding as of January 26, 2025 | 普通股 | 面值$0.001,允许发行80,000股，2026.1.25 总股本和流通股有24,304股， 2026.1.26 总股本和流通股有24,477股 |
-| Additional paid-in capital | 股东真正投的钱 | APIC=（发行价−面值）×股数 |
-| Accumulated other comprehensive income | 非主营浮动 | “不进利润表”的收益/损失，包括外汇变动、投资浮盈（部分）、对冲工具 |
-| Retained earnings | 公司帮股东赚的钱（没分走） | 期末留存收益=期初留存收益+净利润−分红 |
-
+| Preferred stock, $0.001 par value; 2 shares authorized; none issued | 优先股 | 给到投资人，能优先分红，破产优先清算但无投票权；面值 $0.001；授权 2 股但未发行 |
+| Common stock, $0.001 par value; 80,000 shares authorized; 24,304 shares issued and outstanding as of January 25, 2026; 24,477 shares issued and outstanding as of January 26, 2025 | 普通股 | 面值 $0.001；授权 80,000 股；2026-01-25 在外/流通 24,304 股；2025-01-26 为 24,477 股 |
+| Additional paid-in capital | 股东真正投的钱 | APIC =（发行价 − 面值）× 股数 |
+| Accumulated other comprehensive income | 非主营浮动 | “不进利润表”的收益/损失（外汇、部分投资浮盈、对冲工具等） |
+| Retained earnings | 公司帮股东赚的钱（没分走） | 期末留存收益 = 期初留存收益 + 净利润 − 分红 |
 
 ---
 
@@ -182,34 +193,44 @@ tags:
 
 四、疑惑解答
 
-1. CFF中的Principal payments on property and equipment and intangible assets和CFI#Purchases related to property and equipment and intangible assets区别？
+### 1）CFF 中的 Principal payments on property and equipment and intangible assets 和 CFI 中的 Purchases related to property and equipment and intangible assets 有什么区别？
 
-``` code
-  CFI：买资产本身（Capex）
-  CFF：为买资产而“融资/还钱”的现金流
-```
+> **结论先行：**
+>
+> - **CFI**：买资产本身（Capex / 投资行为）
+> - **CFF**：为买资产而产生的**融资与还款**现金流（融资行为）
 
-| 项目                        | 所在  | 本质   | 代表什么       |
-| ------------------------- | --- | ---- | ---------- |
-| Purchases of P&E          | CFI | 投资行为 | 买设备/资产     |
-| Principal payments on P&E | CFF | 融资行为 | 为设备融资后“还钱” |
+| 项目 | 所在 | 本质 | 代表什么 |
+|---|---|---|---|
+| Purchases of P&E | CFI | 投资行为 | 买设备/资产 |
+| Principal payments on P&E | CFF | 融资行为 | 为设备融资后“还钱”（还本金） |
 
-拆开讲清楚
+#### 拆开讲清楚
 
-CFI：Purchases of P&E（Capex）：👉 公司直接用现金买资产；买服务器花 100，现金流 CFI：-100，👉 纯投资行为（不用借钱）
-CFF：Principal payments on P&E：👉 公司不是一次付钱，而是“分期/融资买”，比如融资租赁（finance lease）、分期付款买设备； 买服务器花 100，第一年：付本金 20，CFF: -20; 👉 这是在还“融资负债”
+- **CFI：Purchases of P&E（Capex）**
+  - 公司直接用**现金**买资产  
+  - 例：买服务器花 100 → 现金流 **CFI：-100**
+  - 这是**纯投资行为**（不借钱）
 
-为什么会这样分？
+- **CFF：Principal payments on P&E**
+  - 公司不是一次付钱，而是“**分期/融资买**”（如融资租赁 *finance lease*、分期付款购买设备）
+  - 例：买服务器总价 100，但第一年只付本金 20 → 现金流 **CFF：-20**
+  - 这是在还“**融资负债（本金）**”
 
-👉 因为现金流量表要区分：经营 vs 投资 vs 融资
-🟢 情况1：直接买（现金）CFI：-100
-🔵 情况2：借钱买 / 融资租赁:买的时候：不影响现金流，之后还钱：CFF
+#### 为什么会这样分？
 
-引申另一个问题；👉 Capex ≠ 现金流中的所有设备支出，而是：Capex = CFI + 融资租赁部分（隐藏在CFF）；
+因为现金流量表需要区分：**经营（CFO） vs 投资（CFI） vs 融资（CFF）**。
 
-> Capex通常指CFI中的Purchases of property and equipment。
-> 如果公司使用融资租赁或分期付款，
-> 则当期新增的非现金Capex不会体现在CFI中，
-> 而后续偿还本金会体现在CFF中。
+- **情况 1：直接买（现金）**
+  - 当期用现金支付 100 → 记在 **CFI：-100**
 
+- **情况 2：借钱买 / 融资租赁**
+  - 买的当期可能**不发生现金流出**（例如形成融资租赁负债/分期应付）
+  - 后续按期还本金 → 记在 **CFF**（因为本质是“还融资”）
+
+> **引申：Capex 的口径要注意**
+>
+> - 常见口径里，Capex 通常指 **CFI** 的 *Purchases of property and equipment*  
+> - 如果存在融资租赁/分期等，**“真实新增的设备投入”** 可能会部分体现在后续 **CFF 的本金偿还**里  
+> - 所以在做分析时要确认口径：避免把“投资强度”看偏
 ---
