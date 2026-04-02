@@ -15,7 +15,7 @@ tags:
 
 ## 目录
 - [一、利润表（Income Statement）](#一利润表income-statement)
-- [二、资产负债表（Balance Sheet）](#二、资产负债表balance-sheet)
+- [二、资产负债表（Balance Sheet）](#二、资产负债表-balance-sheet)
 - [三、现金流量表（Cash Flow Statement）](#三现金流量表cash-flow-statement)
 - [四、三表之间的关系（必须掌握）](#四三表之间的关系必须掌握)
 - [五、核心财务指标](#五核心财务指标)
