@@ -110,88 +110,92 @@ tags:
 
 ---
 
-现金流量表
+## 三、现金流量表（Cash Flow Statement）
+
 <img width="1431" height="569" alt="image" src="https://github.com/user-attachments/assets/65033251-e4f5-4be7-a98b-2a6af9b11013" />
 <img width="1431" height="684" alt="image" src="https://github.com/user-attachments/assets/e8098d4d-d062-4661-b50a-3ae22642757a" />
 
-**说明：** 👉 这个财年 看“钱是不是真的进来了”
+> **说明**：👉 这个财年周期看「钱是不是真的进来了」
 
-**三大部分：**
-  * 经营活动现金流（最重要）
-  * 投资活动现金流
-  * 融资活动现金流
+### 三大部分
+- 经营活动现金流（最重要）
+- 投资活动现金流
+- 融资活动现金流
 
-**关键能力：**
-  * 防止“账面赚钱但没现金”的公司
-  * 判断企业是否可持续
-
-**关键科目：**
+### 关键能力
+- 防止“账面赚钱但没现金”的公司
+- 判断企业是否可持续
+  
+### 关键科目
 | 科目 | 含义 | 特别说明 |
 |------|------|----------|
-| Net Income | 净利润 | 起点（非现金）- 利润表中的净利润 |
-| Stock-Based Compensation | 股权激励 | Adjustments to reconcile net income to net cash provided by operating activities#不花现金但会稀释 |
-| Depreciation & Amortization | 折旧摊销 | Adjustments to reconcile net income to net cash provided by operating activities#要加回（非现金） |
-| Gains on non-marketable & publicly-held equity securities, net | 股权投资收益（含未上市和上市） | Adjustments to reconcile net income to net cash provided by operating activities#非主营收益；波动大，不能当“稳定赚钱能力” |
-| Deferred income taxes | 递延所得税 | Adjustments to reconcile net income to net cash provided by operating activities#非现金项目；用于调节利润与现金流差异 |
-| Accounts receivable | 应收账款但未到账 | Changes in operating assets and liabilities, net of acquisitions#根据近两年的差值进行计算 |
-| Inventories | 库存 | Changes in operating assets and liabilities, net of acquisitions#根据近两年的差值进行计算 |
-| Prepaid expenses and other assets | 预付费用及其他流动资产 | Changes in operating assets and liabilities, net of acquisitions#根据近两年的差值进行计算 |
-| Accounts payable | 应付账款 | Changes in operating assets and liabilities, net of acquisitions#根据近两年的差值进行计算 |
+| Net Income | 净利润 | 起点（非现金）；利润表中的净利润 |
+| Stock-Based Compensation | 股权激励 | *Adjustments to reconcile...*；不花现金但会稀释 |
+| Depreciation & Amortization | 折旧摊销 | *Adjustments to reconcile...*；要加回（非现金） |
+| Gains on non-marketable & publicly-held equity securities, net | 股权投资收益（含未上市和上市） | *Adjustments to reconcile...*；非主营收益，波动大 |
+| Deferred income taxes | 递延所得税 | *Adjustments to reconcile...*；非现金项目，用于调节利润与现金流差异 |
+| Accounts receivable | 应收账款但未到账 | *Changes in operating assets and liabilities...*；根据近两年的差值计算 |
+| Inventories | 库存 | 同上 |
+| Prepaid expenses and other assets | 预付费用及其他流动资产 | 同上 |
+| Accounts payable | 应付账款 | 同上 |
 | Accrued and other current liabilities | 应计负债变动 | 增加→现金流入（拖付款）；减少→现金流出 |
-| Other long-term liabilities | 其它长期负债 | 增加→现金流入（拖付款）；减少→现金流出 |
-| Changes in Working Capital | 营运资金变化 | ⭐ 现金流核心变量，这边主要是针对Changes in operating assets and liabilities, net of acquisitions科目内容 |
-| Operating Cash Flow | 经营现金流 | net income -> ocf通过Adjustments to reconcile和Changes in Working Capital进行调整；去掉非现金和非经营现金活动 |
-| Proceeds from sales of marketable securities | 出售“可交易证券”收到的现金 | 卖掉股票 / 债券（短期投资），收到现金；是“卖出的钱”，不是利润 |
-| Proceeds from maturities of marketable securities | 持有到期收回本金 | 买的是债券（比如国债），到期后拿回本金，债券面值（到期收回的钱）|
-| Proceeds from sales of non-marketable equity securities | 出售“非上市股权” | 投资未上市公司（VC、股权投资），卖掉后收现金，出售价格（现金流入）|
-| Purchases of marketable securities | 买入可交易证券（股票/债券）| 投资股票 / 短期债券，买入花的钱（现金流出）|
-| Purchases of non-marketable equity securities | 投资非上市公司| 投VC项目 / 买私募股权，投资金额（现金流出）|
-| Groq, Inc | 单独列出来的重大投资| 对某公司（Groq）的大额投资 / 金额大 → 单列，和上一条一样，只是重大项目单独披露|
-| Capex | 资本开支（服务器 / GPU、数据中心、设备、软件资产）  | 设备（GPU、服务器等）、厂房、数据中心，属于Cash Flow from Investing Activities（CFI）#Purchases related to property and equipment and intangible assets |
-| Acquisitions, net of cash acquired | 并购支出（扣掉买到的现金）| 花了钱/但对方账上也有现金，= 收购支付金额 - 被收购公司现金|
-| Proceeds related to employee stock plans | 公司通过员工股票计划获得的现金流入。这通常是在员工行使股票期权时，公司会收到现金。员工以设定价格购买股票，支付现金给公司| 现金流入（正数）/ 资产负债表：现金↑，APIC（资本溢价）↑|
-| Payments related to repurchases of common stock | 公司用现金回购自己的股票，这部分流出的钱需要记入融资现金流| 现金流出（负数）/ 资产负债表：现金↓，股东权益↓（通过减少股票数量或 treasury stock）|
-| Payments related to employee stock plan taxes | 员工股票计划涉及的税款支付，公司为员工股票计划相关税费支付现金。公司为员工行使股票期权时支付的税费（通常按股票市场价格计算）| 现金流出（负数）/ 资产负债表：现金↓，应付税款↑|
-| Dividends paid | 公司支付的现金股息，通常用于奖励股东 / 每股股息 × 已发行的股票数量| 现金流出（负数）/ 资产负债表：现金↓，股东权益↓（通过 retained earnings）|
-| Principal payments on property and equipment and intangible assets | 公司购买长期资产（如设备、厂房、软件）时支付的现金流出，属于投资类支出。| 现金流出（负数）/ 资产负债表：现金↓，固定资产↑|
-| Debt Repayment | 公司偿还债务本金的现金流出，通常包括银行贷款和发行债券的本金偿还。 | 现金流出（负数）/ 资产负债表：现金↓，负债↓（减少债务） |
-| Debt Issuance | 公司借钱（发债 / 银行贷款） | 现金↑、负债↑ |
-| Free Cash Flow | 自由现金流 | = OCF - Capex |
-
+| Other long-term liabilities | 其它长期负债 | 增加→现金流入；减少→现金流出 |
+| Changes in Working Capital | 营运资金变化 | ⭐ 现金流核心变量（经营性资产/负债变动的集合） |
+| Operating Cash Flow | 经营现金流 | 净利润经 *Adjustments* 与营运资金调整后得到；去掉非现金与非经营现金活动 |
+| Proceeds from sales of marketable securities | 出售可交易证券收到的现金 | 卖股票/债券收到现金；是“卖出的钱”，不是利润 |
+| Proceeds from maturities of marketable securities | 持有到期收回本金 | 债券到期拿回本金（面值） |
+| Proceeds from sales of non-marketable equity securities | 出售非上市股权 | VC/股权投资退出的现金流入 |
+| Purchases of marketable securities | 买入可交易证券 | 投资股票/短期债券；现金流出 |
+| Purchases of non-marketable equity securities | 投资非上市公司 | 投 VC/私募股权；现金流出 |
+| Groq, Inc | 重大投资单列 | 大额投资项目单独披露 |
+| Capex | 资本开支 | 设备（GPU/服务器等）、厂房、数据中心；通常体现在 CFI 的 *Purchases related to property and equipment and intangible assets* |
+| Acquisitions, net of cash acquired | 并购支出（扣掉买到的现金） | = 收购支付金额 − 被收购公司现金 |
+| Proceeds related to employee stock plans | 员工股票计划现金流入 | 员工行权等支付现金给公司；现金↑、APIC↑ |
+| Payments related to repurchases of common stock | 回购股票 | 现金流出；现金↓、股东权益↓ |
+| Payments related to employee stock plan taxes | 员工股权计划相关税款 | 现金流出；现金↓、应付税款↑ |
+| Dividends paid | 现金股息 | 现金流出；现金↓、股东权益↓（retained earnings） |
+| Principal payments on property and equipment and intangible assets | 与资产相关的本金支付 | 常见于融资租赁/分期等的本金偿付；属于融资现金流视角很关键 |
+| Debt Repayment | 偿还债务本金 | 现金流出；现金↓、负债↓ |
+| Debt Issuance | 借钱（发债/贷款） | 现金↑、负债↑ |
+| Free Cash Flow | 自由现金流 | = OCF − Capex |
 
 ---
 
-二、三表之间的关系（必须掌握）
+## 四、三表之间的关系（必须掌握）
 
-这是很多人卡住的关键点👇
-  * 利润表的“净利润” → 进入资产负债表（留存收益）
-  * 现金流量表 → 调整利润（把“账面利润”变成“真实现金”）
-  * 三张表是一个闭环系统
+这是很多人卡住的关键点：
 
-👉 一句话理解：
-** 利润表讲故事，资产负债表是结果，现金流量表验证真假 **
+- 利润表的“净利润” → 进入资产负债表（留存收益）
+- 现金流量表 → 调整利润（把“账面利润”变成“真实现金”）
+- 三张表是一个闭环系统
 
+> 👉 一句话理解：  
+> **利润表讲故事，资产负债表是结果，现金流量表验证真假。**
 
-三、核心财务指标：
+---
 
-| 指标 | 公式 | 核心意义 | 趋势 | 描述
+## 五、核心财务指标
+
+| 指标 | 公式 | 核心意义 | 趋势 | 描述 |
 |------|------|----------|------|------|
-| ROE（Return on Equity） | 净利润 / 平均股东权益 | 赚钱能力 | 越高越好 | Income#Net income / Balance Sheets#Total shareholders' equity（平均股东权益 =（上一年 + 这一年）/2）
-| 资产负债率（Debt-to-Asset Ratio） | 总负债 / 总资产 | 风险水平 | 适中最好 | Balance Sheets#Total liabilities / Balance Sheets#Total assets
-| 负债股东权益比率（Debt-to-Equity Ratio） | 总负债 / 股东权益 | 负债与股东权益的比例，衡量资本结构 | 越低越好 | 过高的比例表示公司可能依赖债务进行融资，股东权益相对较少，可能面临财务风险。
-| 流动比率（Current Ratio） | 流动资产 / 流动负债 | 短期偿债能力 | ≈2最好 | Balance Sheets#Total current assets / Balance Sheets#Total current liabilities
-| 存货周转率（Inventory Turnover Ratio） | 营业成本 / 平均存货 | 卖货速度 | 越高越好 | Income#Cost of revenue / Balance Sheets#Inventories （平均存货 =（上一年 + 这一年）/2）
-| DIO（存货周转天数 - Days Inventory Outstanding） | 365 / 存货周转率 | 库存占用时间 | 越低越好 | 365/ 存货周转率
-| 应收账款周转率（Accounts Receivable Turnover Ratio） | 营业收入 / 平均应收账款 | 收钱速度 | 越高越好 | Income#revenue / Balance Sheets#Accounts receivable, net （平均应收账款 =（上一年 + 这一年）/2）
-| DSO（回款天数 - Days Sales Outstanding） | 365 / 应收账款周转率 | 收款周期 | 越低越好 | 365 / 应收账款周转率
-| DPO（应付账款周转天数 - Days Payable Outstanding） | 365 / (营业成本 / 平均应付账款) | 占用供应商资金时间 | 越高越好 | 365 / （Income#Cost of revenue / Balance Sheets#Accounts payable （平均应付账款 =（上一年 + 这一年）/2 ））
-| CCC（现金转换周期） | DIO + DSO - DPO | 现金周转效率 | 越低越好（甚至为负最好） | DIO + DSO - DPO
-| Cash Conversion Ratio（Earnings Quality Ratio、Cash Conversion） | CFO / Net Income | 利润转化为现金的能力 | ≈1或>1最好 | 看利润是否“虚”
-| Operating Cash Flow Margin （CFO Margin）| CFO / Revenue | 收入转化为经营现金能力 | 越高越好 | 现金赚钱能力
-| Free Cash Flow Margin（FCF Margin） | FCF / Revenue | 收入转化为自由现金能力 | ⭐核心指标 | 看公司“赚钱质量”
-| FCF Conversion Ratio（Cash Earnings Ratio） | FCF / Net Income | 净利润转化为自由现金能力 | 越高越好 | 看“最终能留下多少钱”
+| ROE（Return on Equity） | 净利润 / 平均股东权益 | 赚钱能力 | 越高越好 | Income#Net income / Balance Sheets#Total shareholders' equity（平均股东权益 =（上一年 + 这一年）/2） |
+| 资产负债率（Debt-to-Asset Ratio） | 总负债 / 总资产 | 风险水平 | 适中最好 | Balance Sheets#Total liabilities / Balance Sheets#Total assets |
+| 负债股东权益比率（Debt-to-Equity Ratio） | 总负债 / 股东权益 | 资本结构 | 越低越好 | 过高表示公司可能依赖债务融资，股东权益相对较少，潜在财务风险更高 |
+| 流动比率（Current Ratio） | 流动资产 / 流动负债 | 短期偿债能力 | ≈2 最好 | Balance Sheets#Total current assets / Balance Sheets#Total current liabilities |
+| 存货周转率（Inventory Turnover Ratio） | 营业成本 / 平均存货 | 卖货速度 | 越高越好 | Income#Cost of revenue / Balance Sheets#Inventories（平均存货 =（上一年 + 这一年）/2） |
+| DIO（存货周转天数） | 365 / 存货周转率 | 库存占用时间 | 越低越好 | 365 / 存货周转率 |
+| 应收账款周转率（Accounts Receivable Turnover Ratio） | 营业收入 / 平均应收账款 | 收钱速度 | 越高越好 | Income#Revenue / Balance Sheets#Accounts receivable, net（平均应收账款 =（上一年 + 这一年）/2） |
+| DSO（回款天数） | 365 / 应收账款周转率 | 收款周期 | 越低越好 | 365 / 应收账款周转率 |
+| DPO（应付账款周转天数） | 365 / (营业成本 / 平均应付账款) | 占用供应商资金时间 | 越高越好 | 365 /（Income#Cost of revenue / Balance Sheets#Accounts payable（平均应付账款 =（上一年 + 这一年）/2）） |
+| CCC（现金转换周期） | DIO + DSO − DPO | 现金周转效率 | 越低越好（甚至为负最好） | DIO + DSO − DPO |
+| Cash Conversion Ratio（Earnings Quality Ratio / Cash Conversion） | CFO / Net Income | 利润→现金转化能力 | ≈1 或 >1 最好 | 看利润是否“虚” |
+| Operating Cash Flow Margin（CFO Margin） | CFO / Revenue | 收入→经营现金能力 | 越高越好 | 现金赚钱能力 |
+| Free Cash Flow Margin（FCF Margin） | FCF / Revenue | 收入→自由现金能力 | ⭐ 核心指标 | 看公司“赚钱质量” |
+| FCF Conversion Ratio（Cash Earnings Ratio） | FCF / Net Income | 净利润→自由现金能力 | 越高越好 | 看“最终能留下多少钱” |
 
-四、疑惑解答
+---
+
+## 六、疑惑解答
 
 ### 1）CFF 中的 Principal payments on property and equipment and intangible assets 和 CFI 中的 Purchases related to property and equipment and intangible assets 有什么区别？
 
