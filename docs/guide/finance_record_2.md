@@ -32,6 +32,14 @@ tags:
 - Shareholders’ equity#Additional paid-in capital 增加
 - Shareholders’ equity#Retained earnings 减少
 
+
+### 以NVIDIA分析
+
+<img width="1427" height="641" alt="image" src="https://github.com/user-attachments/assets/941de773-175a-4363-81da-d9c138f2cb8c" />
+<img width="1411" height="271" alt="image" src="https://github.com/user-attachments/assets/13fcf0dc-fa40-4cb4-8c37-e07c7173cd45" />
+
+
+
 ### 基础知识
 
 👉 股本（Share Capital）-> Shareholders’ equity#Common stock
