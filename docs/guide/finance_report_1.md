@@ -179,6 +179,7 @@ tags:
 | 指标 | 公式 | 核心意义 | 趋势 | 描述 |
 |------|------|----------|------|------|
 | ROE（Return on Equity） | 净利润 / 平均股东权益 | 赚钱能力 | 越高越好 | Income#Net income / Balance Sheets#Total shareholders' equity（平均股东权益 =（上一年 + 这一年）/2） |
+| 每股净资产 | 股东权益 / 总股本 | 每股价值 | 越高越好 | Balance Sheets#Total shareholders' equity / 总股本数量 |
 | 资产负债率（Debt-to-Asset Ratio） | 总负债 / 总资产 | 风险水平 | 适中最好 | Balance Sheets#Total liabilities / Balance Sheets#Total assets |
 | 负债股东权益比率（Debt-to-Equity Ratio） | 总负债 / 股东权益 | 资本结构 | 越低越好 | 过高表示公司可能依赖债务融资，股东权益相对较少，潜在财务风险更高 |
 | 流动比率（Current Ratio） | 流动资产 / 流动负债 | 短期偿债能力 | ≈2 最好 | Balance Sheets#Total current assets / Balance Sheets#Total current liabilities |
