@@ -32,14 +32,6 @@ tags:
 - Shareholders’ equity#Additional paid-in capital 增加
 - Shareholders’ equity#Retained earnings 减少
 
-
-### 以NVIDIA分析
-
-<img width="1427" height="641" alt="image" src="https://github.com/user-attachments/assets/941de773-175a-4363-81da-d9c138f2cb8c" />
-<img width="1411" height="271" alt="image" src="https://github.com/user-attachments/assets/13fcf0dc-fa40-4cb4-8c37-e07c7173cd45" />
-
-
-
 ### 基础知识
 
 👉 股本（Share Capital）-> Shareholders’ equity#Common stock
@@ -150,7 +142,23 @@ tags:
 
 ---
 
-## 二、SBC与现金支付的区别
+## 二、NVIDIA分析
+
+<img width="1427" height="641" alt="image" src="https://github.com/user-attachments/assets/941de773-175a-4363-81da-d9c138f2cb8c" />
+<img width="1411" height="271" alt="image" src="https://github.com/user-attachments/assets/13fcf0dc-fa40-4cb4-8c37-e07c7173cd45" />
+
+### 关键科目
+| 科目 | 含义 | 特别说明 |
+|------|------|----------|
+| Other comprehensive income | 公司总收入 | 看增长（YoY）最重要 |
+| Issuance of common stock | 对外融资&&员工行权 | 包含现金流量表中的CFF#Proceeds related to employee stock plans（期权行权（exercise）带来的现金流入）和对外融资 |
+| Tax withholding related to common stock | 隐性回购 | 只存在于SBC中|
+| Shares repurchased| 研发费用 | 科技公司高是好事 |
+| Cash dividends declared and paid | 销售管理费用 | 反映运营效率 |
+| Stock-based compensation | 总运营费用 | = R&D + SG&A |
+
+> CFF#Proceeds related to employee stock plans只针对期权行权，RSU和Restricted stock都不会带来现金流
+## 三、SBC与现金支付的区别
 
 关于现金支付和SBC的直接对比
 
@@ -168,7 +176,7 @@ PE（price to earnings）= price(股价) / （net income / 总股本）变高；
 
 ---
 
-## 三、SBC与增发股票/银行贷款的区别
+## 四、SBC与增发股票/银行贷款的区别
 
 ### 增发股票
 
@@ -213,7 +221,7 @@ Vesting：
 ---
 
 
-## 四、SBC公司常见的使用情况&&sbc后的行为影响
+## 五、SBC公司常见的使用情况&&sbc后的行为影响
 
 ### 初始状态：
   - 公司价值：1,000,000
@@ -321,7 +329,7 @@ Vesting：
 
 ---
 
-## 五、SBC常见种类
+## 六、SBC常见种类
 
 > 我所经历的三类，分别如下：
 
@@ -420,7 +428,7 @@ Vesting：
 
 ---
 
-## 六、常见疑问
+## 七、常见疑问
 
 ### 1️⃣ 会不会出现：股东权益 <（股本 + APIC）？
 > ✅ 会，而且很常见
