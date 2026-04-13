@@ -150,7 +150,7 @@ tags:
 ### 关键科目
 | 科目 | 含义 | 特别说明 |
 |------|------|----------|
-| Other comprehensive income | 公司总收入 | 看增长（YoY）最重要 |
+| Other comprehensive income | 已发生的价值变动，但不计入当期净利润 | 市场价格已经变了（已经发生）&& 没卖（未实现）或者不允许进利润表：债券市值变动、外汇变动、养老金调整 |
 | Issuance of common stock | 对外融资&&员工行权 | 包含现金流量表中的CFF#Proceeds related to employee stock plans（期权行权（exercise）带来的现金流入）和对外融资 |
 | Tax withholding related to common stock | 隐性回购 | 只存在于SBC中|
 | Shares repurchased| 研发费用 | 科技公司高是好事 |
