@@ -202,6 +202,9 @@ tags:
 | Operating Cash Flow Margin（CFO Margin） | CFO / Revenue | 收入→经营现金能力 | 越高越好 | 现金赚钱能力 |
 | Free Cash Flow Margin（FCF Margin） | FCF / Revenue | 收入→自由现金能力 | ⭐ 核心指标 | 看公司“赚钱质量” |
 | FCF Conversion Ratio（Cash Earnings Ratio） | FCF / Net Income | 净利润→自由现金能力 | 越高越好 | 看“最终能留下多少钱” |
+| PE | price（股票） / EPS |  | 增长 + 稳定性 + 风险 的综合定价 | 稳定行业：高PE；不稳定行业：低PE；银行（5～10）；消费：中高（20–40倍）；科技：高（30–100+） |
+| PB | price（股票） / BVPS |  | 股价/每股净资产 | 一般看当前的PB是否合理 |
+
 
 ---
 
