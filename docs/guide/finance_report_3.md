@@ -224,6 +224,7 @@ CFF – Principal payments on property and equipment and intangible assets
 
 
 ### 资产净值
+<img width="1425" height="562" alt="image" src="https://github.com/user-attachments/assets/8a91773f-96d8-49c6-97fe-82971cb7766d" />
 
 
 
