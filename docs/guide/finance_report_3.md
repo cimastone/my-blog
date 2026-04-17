@@ -511,3 +511,366 @@ Option：
 | 股本/APIC | strike + SBC     |
 | 税务      | (市价 - strike)    |
 
+
+## 三、CF#Changes in Working Capital(营运资金变化)
+
+<img width="1428" height="221" alt="image" src="https://github.com/user-attachments/assets/c6b09ebf-5479-4814-b951-e4f94b4bd3db" />
+<img width="1430" height="691" alt="image" src="https://github.com/user-attachments/assets/6f99ee83-b1e6-4d0e-82f2-2e2c174fc2e3" />
+
+从上面的图片我们就能看出，营运资金变化是基于资产负债表中的现金变化部分进行调整的到CFO；同时注意现金流量表中包含**net of acquisitions**
+
+
+| 科目      | 现金流量表值              | 近两年差值     | 调整逻辑     |
+| ------- | ---------------- |----------------------|----------------------|
+| Accounts receivable    | (15,399)		 | (15,399)		|由资产负债表中的近两年的差值得出的，今年比去年的多，现金流需把新增部分去除|
+| Inventories            | (11,324)    | (11,324)		|由资产负债表中的近两年的差值得出的，今年比去年的多，现金流需把新增部分去除|
+| Prepaid expenses and other assets | 577 | 591     |差值通常体现在汇率 or small reclass|
+| Accounts payable       | 3096        | 3502     | 并购 && 汇率（NVDA全球业务）|
+| Accrued and other current liabilities | 5,257 | 9615 | 见下面说明 |
+| Other long-term liabilities | 1844 | 3061     | 见下面说明 |
+
+
+### Accrued and other current liabilities
+
+✅（1）包含大量“非经营性项目”
+
+这个科目通常包括：
+  - 应付工资/奖金
+  - 应计费用
+  - 税费
+  - 利息
+  - SBC相关负债（重点）
+  - 甚至衍生负债
+
+👉 其中很多：
+> ❌ 不属于operating working capital
+> ❌ 不进CFO这一行
+
+✅（2）SBC
+
+NVDA这几年：
+👉 SBC规模非常大
+
+会带来：
+  - BS：Accrued liabilities ↑（比如应付薪酬）
+  - CFO：不会作为working capital调整
+
+因为：
+
+> SBC已经在：
+>   - 净利润里扣了
+>   - 又在CFO里加回了（non-cash）
+
+👉 如果这里再算一遍，就重复计算
+
+✅（3）所得税相关负债
+  - Deferred tax / income tax payable
+  - 👉 也可能被拆到其他行
+
+✅（4）重分类
+
+有些负债：
+  - 从current → non-current
+  - 👉 BS有变动，但CFO不认
+
+### SBC在资产负债表形态
+
+1️⃣ 授予时（Grant date）
+  - 不记负债
+  - 不影响现金
+  - 不进资产负债表
+
+2️⃣ 服务期内（逐步确认费用）
+
+假设员工分4年归属：
+
+每年确认：
+  - Dr：SBC费用（利润表）
+  - Cr：APIC（股东权益）
+
+👉 注意这里：
+> ✔ 直接进权益（APIC）
+> ❌ 不是负债（这是最核心点）
+
+3️⃣ 那为什么会出现在Accrued liabilities？
+
+👉 因为“时间差”和“结算机制”
+
+可能出现两种情况：
+
+✅ 情况A：已确认费用，但还没真正发股/结算
+
+比如：
+  - 工资周期末
+  - RSU已服务但还没发股票
+
+会暂时记：
+  - Cr：Accrued compensation（负债）
+
+之后：
+  - 发股时 → 转去APIC
+
+👉 所以你看到：
+> Accrued and other current liabilities ↑
+
+✅ 情况B：税务代扣（非常重要）
+
+RSU vest时：
+
+公司会：
+  - 代员工缴税（withholding tax）
+
+会产生：
+  - 应付税（liability）
+
+👉 也会进：
+  > Accrued liabilities / other current liabilities
+
+### Other long-term liabilities
+
+✅（1）非经营性负债
+
+这个科目通常包含：
+  - long-term tax liabilities
+  - lease liabilities
+  - deferred revenue（部分）
+  - pension等
+
+👉 很多：
+> ❌ 属于融资 / 非经营
+> ❌ 不进CFO working capital
+
+✅（2）融资租赁
+
+如果有：
+  - lease liability增加
+
+👉 会：
+  - 进CFF（principal payment）
+  - 不进CFO working capital
+
+```code
+
+CFO营运资本变动
+= ΔBS
+− 并购影响
+− 汇率
+− 非现金项目（SBC / D&A / revaluation）
+− 非经营项目（税 / 融资 / lease）
+− 重分类
+
+```
+
+## 一、RSU整条链路
+
+### 总框架
+
+```code
+
+Grant → 服务期确认费用 → Vest（归属） → 扣税 → 发股
+
+```
+对应三张表：
+  - 利润表：SBC expense
+  - 现金流量表：加回 + 税务影响
+  - 资产负债表：APIC / Tax payable / Deferred tax
+
+### 第一步：SBC费用是怎么来的?
+
+公司在授予时就确定一个grant-date fair value（比如100）
+
+然后在服务期内摊：
+```code
+Dr SBC expense
+Cr APIC
+```
+
+👉 关键点：
+  - ✔ 不涉及现金
+  -  ✔ 不进负债（大方向）
+  - ✔ 直接进权益（APIC）
+
+### 第二步：Deferred Tax
+
+SBC会带来税会差异（book vs tax）
+
+**会计（book）**
+
+按授予日公允价值确认费用（比如100）
+
+**税务（tax）**
+
+👉 按归属时的股票市价扣税（比如150）
+
+**结果：**
+```code
+tax deduction（150） > book expense（100）
+```
+
+👉 产生：**① 递延所得税资产（DTA）**
+
+在服务期内确认：
+```code
+Dr DTA
+Cr Tax benefit（减少所得税费用）
+```
+
+### 第三步：RSU归属（核心节点）
+
+到了vest date：
+
+假设：
+  - grant value：100
+  - vest时股价：150
+  - 税率：25%
+
+**税务实际发生：**
+
+公司可以抵税：
+```code
+150 × 25% = 37.5
+```
+
+但账上之前只确认了：
+```code
+100 × 25% = 25
+```
+
+差额：
+```code
+37.5 - 25 = 12.5 (Excess Tax Benefit)
+```
+
+### 第四步：Excess Tax Benefit 到底去了哪里？
+
+现在规则（ASC 718之后）：
+
+**👉 直接进CFO**
+
+会计处理：
+```code
+Dr Cash（或减少税款）
+Cr Income tax payable
+```
+
+同时：
+```code
+差额（12.5）
+→ 直接体现在CFO（operating cash inflow）
+```
+👉 不再进APIC（老准则才进）
+
+### 第五步：APIC到底怎么变？
+
+1️⃣ 服务期内
+```code
+Cr APIC（累计100）
+```
+
+2️⃣ 发股时（RSU vest）
+
+公司会：
+  - 发股票（equity增加）
+  - 同时：👉 不会再额外影响APIC（因为之前已经记过）
+
+3️⃣ 税务代扣（关键）
+
+员工要交税，公司代扣：
+
+比如：
+  - 股票价值150
+  - 税：37.5
+
+公司通常：
+
+👉 不给员工全部股票
+
+👉 留一部分卖掉交税（net settlement）
+
+
+会计：
+```code
+Dr APIC（或减少equity）
+Cr Cash（交税）
+```
+
+👉 这一步：
+  - 会影响equity结构
+  - 也可能影响你看到的liability（短期应付税）
+
+### 第六步：现金流量表
+
+现在把所有东西放进CFO：
+
+**起点：Net Income**
+
+已经包含：
+  - SBC expense（-100）
+    
+**CFO调整：**
+① 加回SBC（非现金）： +100
+
+② Working capital
+  - Accrued liabilities里如果有SBC相关
+    
+👉 ❌ 不重复算
+
+③ 税务现金流（重点）
+
+当RSU vest：
+
+公司实际：
+  - 交税（现金流出）
+
+但：👉 tax deduction更大（150）
+
+**最终效果：**
+
+👉 CFO通常是：+ Excess tax benefit（12.5）
+
+### 第七步： 为什么RSU“几乎总是excess tax benefit”？
+
+**原因一：科技股上涨**
+
+NVDA这种公司：
+
+```code
+vest时股价 >> grant时股价
+```
+
+👉 tax deduction > book expense
+
+👉 几乎必然：
+
+✔ excess tax benefit
+
+**原因二：RSU没有行权价**
+
+期权（Option）：
+```code
+tax deduction = max(0, 股价 - strike)
+```
+
+👉 有可能：股价 < strike → 没有tax benefit
+
+RSU：
+```code
+tax deduction = 股价（全额）
+```
+
+👉 永远有
+
+👉 且通常更大
+
+**理解图**
+
+```code
+SBC费用 ↓ Net Income
+        ↑ CFO加回
+
+RSU升值 → tax deduction ↑
+        → Excess tax benefit ↑ CFO
+
+Accrued liabilities ↑（含SBC/税）
+        → CFO中剔除（避免重复）
+```
