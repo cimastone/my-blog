@@ -2,7 +2,7 @@
 title: "第二周"
 date: 2026-04-08
 author: cimaStone
-category: "财务报表"
+category: "投资/财务报表"
 tags:
   - SCB
   - APIC
