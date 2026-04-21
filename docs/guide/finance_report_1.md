@@ -190,9 +190,9 @@ tags:
 | ROE（Return on Equity） | 净利润 / 平均股东权益 | 赚钱能力 | 越高越好 | Income#Net income / Balance Sheets#Total shareholders' equity（平均股东权益 =（上一年 + 这一年）/2） |
 | 每股净资产 | 股东权益 / 总股本 | 每股价值 | 越高越好 | Balance Sheets#Total shareholders' equity / 总股本数量 |
 | 资产负债率（Debt-to-Asset Ratio） | 总负债 / 总资产 | 风险水平 | 适中最好 | Balance Sheets#Total liabilities / Balance Sheets#Total assets |
-| 负债股东权益比率（Debt-to-Equity Ratio） | 总负债 / 股东权益 | 资本结构 | 越低越好 | 过高表示公司可能依赖债务融资，股东权益相对较少，潜在财务风险更高 |
+| 产权比率 - 负债股东权益比率（Debt-to-Equity Ratio） | 总负债 / 股东权益 | 公司用了多少“别人的钱”，相对于“自己的钱” | 越低越好，< 1：保守（权益多）；1–2：正常；> 2：杠杆较高 | 过高表示公司可能依赖债务融资，股东权益相对较少，潜在财务风险更高，但❌ 高不一定就一定不好 → 银行、地产行业本来就高杠杆 |
 | 流动比率（Current Ratio） | 流动资产 / 流动负债 | 短期偿债能力 | ≈2 最好 | Balance Sheets#Total current assets / Balance Sheets#Total current liabilities |
-| 存货周转率（Inventory Turnover Ratio） | 营业成本 / 平均存货 | 卖货速度 | 越高越好 | Income#Cost of revenue / Balance Sheets#Inventories（平均存货 =（上一年 + 这一年）/2） |
+| 存货周转率（Inventory Turnover Ratio） | 营业成本 / 平均存货 | 卖货速度 | 越高越好 | Income#Cost of revenue / Balance Sheets#Inventories（平均存货 =（上一年 + 这一年）/2），这个在财报中常表现为次数，次数越大，说明存货周转率越快 |
 | DIO（存货周转天数） | 365 / 存货周转率 | 库存占用时间 | 越低越好 | 365 / 存货周转率 |
 | 应收账款周转率（Accounts Receivable Turnover Ratio） | 营业收入 / 平均应收账款 | 收钱速度 | 越高越好 | Income#Revenue / Balance Sheets#Accounts receivable, net（平均应收账款 =（上一年 + 这一年）/2） |
 | DSO（回款天数） | 365 / 应收账款周转率 | 收款周期 | 越低越好 | 365 / 应收账款周转率 |
@@ -202,8 +202,13 @@ tags:
 | Operating Cash Flow Margin（CFO Margin） | CFO / Revenue | 收入→经营现金能力 | 越高越好 | 现金赚钱能力 |
 | Free Cash Flow Margin（FCF Margin） | FCF / Revenue | 收入→自由现金能力 | ⭐ 核心指标 | 看公司“赚钱质量” |
 | FCF Conversion Ratio（Cash Earnings Ratio） | FCF / Net Income | 净利润→自由现金能力 | 越高越好 | 看“最终能留下多少钱” |
-| PE | price（股票） / EPS |  | 增长 + 稳定性 + 风险 的综合定价 | 稳定行业：高PE；不稳定行业：低PE；银行（5～10）；消费：中高（20–40倍）；科技：高（30–100+） |
-| PB | price（股票） / BVPS |  | 股价/每股净资产 | 一般看当前的PB是否合理 |
+| PE | price（股票） / EPS | 每股收益 | 增长 + 稳定性 + 风险 的综合定价 | 稳定行业：高PE；不稳定行业：低PE；银行（5～10）；消费：中高（20–40倍）；科技：高（30–100+） |
+| PB | price（股票） / BVPS | 每股净资产 | 股价/每股净资产 | 一般看当前的PB是否合理 |
+| 股息率 | 每股现金股利/price（股票） | 每股分红 | 越高越好，基本按银行年化做比较 | 和股利支付率一样，都只计算现金分红|
+| 股利支付率 | 每股股利（DPS）/ 每股收益（EPS） | 只看现金分红，不包含送股和回购 | 越多越好 | 一般可以看出公司的分红策略 |
+| 营业周期 | Operating Cycle = DIO + DSO | 买入/生产库存 → 卖出 → 收到钱 | 周转越快就越短则越好 | 从“买入/生产库存 → 卖出 → 收到钱”，平均要多少天 |
+| 速动比率 | (流动资产−存货−预付)/流动负债​ | 不依赖卖库存，公司能不能还掉短期债务 | > 1：一般认为短期偿债安全；0.5–1：要结合行业；< 0.5：通常偏紧 | 超市 / 零售：可以低（库存周转快）；软件 / 半导体（比如NVDA）：通常更高；常见误区：❌ 认为越高越好 → 可能说明现金闲置、效率低 |
+| 保守速动比率（Cash Ratio / Defensive Interval） | (货币资金+短期投资)/流动负债​ | 公司“立刻”能拿现金还债的能力 | > 1：极其安全（但不常见）；0.2–0.5：正常区间；< 0.2：依赖经营现金流 | 保守速动比率 ≤ 速动比率 ≤ 流动比率；常见误区：❌ 觉得低就危险 → 很多公司靠持续现金流运转（比如苹果、可口可乐） |
 
 
 ---
